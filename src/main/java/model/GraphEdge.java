@@ -11,17 +11,17 @@ public class GraphEdge extends AbstractEdge {
 
     private final Pair<GraphNode, GraphNode> edgeNodes;
 
-    private boolean B;
+    private boolean border;
 
-    public GraphEdge(String id, String symbol, Pair<GraphNode, GraphNode> edgeNodes, boolean B) {
+    public GraphEdge(String id, String symbol, Pair<GraphNode, GraphNode> edgeNodes, boolean border) {
         super(id, edgeNodes.getValue0(), edgeNodes.getValue1(), false);
         this.edgeNodes = edgeNodes;
         this.symbol = symbol;
-        this.B = B;
+        this.border = border;
     }
 
-    public GraphEdge(String id, Pair<GraphNode, GraphNode> edgeNodes, boolean B) {
-        this(id, EDGE_SYMBOL, edgeNodes, B);
+    public GraphEdge(String id, Pair<GraphNode, GraphNode> edgeNodes, boolean border) {
+        this(id, EDGE_SYMBOL, edgeNodes, border);
     }
 
     public String getSymbol() {
@@ -32,15 +32,15 @@ public class GraphEdge extends AbstractEdge {
         return edgeNodes;
     }
 
-    public boolean getB() {
-        return B;
+    public boolean getBorder() {
+        return border;
     }
 
-    public void setB(boolean b) {
-        B = b;
+    public void setBorder(boolean border) {
+        this.border = border;
     }
 
-    public double getL() {
+    public double getLength() {
         return Point3d.distance(edgeNodes.getValue0().getCoordinates(), edgeNodes.getValue1().getCoordinates());
     }
 
@@ -52,7 +52,14 @@ public class GraphEdge extends AbstractEdge {
 
         private final String id;
 
-        private boolean B;
+        private boolean border;
+
+        public GraphEdgeBuilder(String id, GraphNode source, GraphNode target, boolean border) {
+            this.symbol = EDGE_SYMBOL;
+            this.id = id;
+            this.edgeNodes = new Pair<>(source, target);
+            this.border = border;
+        }
 
         public GraphEdgeBuilder(String id, GraphNode source, GraphNode target) {
             this.symbol = EDGE_SYMBOL;
@@ -60,13 +67,13 @@ public class GraphEdge extends AbstractEdge {
             this.edgeNodes = new Pair<>(source, target);
         }
 
-        public GraphEdgeBuilder setB(boolean b) {
-            B = b;
+        public GraphEdgeBuilder setBorder(boolean border) {
+            this.border = border;
             return this;
         }
 
         public GraphEdge build() {
-            return new GraphEdge(id, symbol, edgeNodes, B);
+            return new GraphEdge(id, symbol, edgeNodes, border);
         }
     }
 }

@@ -11,11 +11,15 @@ public class InteriorNode extends GraphNode {
 
     private static final String INTERIOR_SYMBOL = "I";
 
-    private final Triplet<Vertex, Vertex, Vertex> triangle;
+    private  Triplet<Vertex, Vertex, Vertex> triangle;
 
     private final List<Vertex> associatedNodes = new LinkedList<>();
 
     private boolean R;
+
+    public InteriorNode(AbstractGraph graph, String id, Point3d coordinates) {
+        super(graph, id, INTERIOR_SYMBOL, coordinates);
+    }
 
     public InteriorNode(AbstractGraph graph, String id, Vertex v1, Vertex v2, Vertex v3) {
         super(graph, id, INTERIOR_SYMBOL, getInteriorPosition(v1, v2, v3));

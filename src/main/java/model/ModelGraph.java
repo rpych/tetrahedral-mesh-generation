@@ -27,22 +27,22 @@ public class ModelGraph extends MultiGraph {
         return edge.map(Element::getId).flatMap(this::getEdgeById);
     }
 
-    public Vertex insertVertex(Vertex vertex) {
+    public Vertex insertVertex(Vertex vertex, boolean hanging) {
         Node node = this.addNode(vertex.getId());
         node.addAttribute("ui.class", vertex.getVertexType().getSymbol());
-        //node.addAttribute("ui.label", vertex.getId());
+        node.addAttribute("ui.label", "H=" + (hanging ? "T" : "F"));
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, vertex.getXCoordinate(), vertex.getYCoordinate(), vertex.getZCoordinate());
         vertexes.put(vertex.getId(), vertex);
         return vertex;
     }
 
-    public Vertex insertVertex(String id, VertexType vertexType, Point3d coordinates) {
+    public Vertex insertVertex(String id, VertexType vertexType, Point3d coordinates, boolean hanging) {
         Vertex vertex = new Vertex.VertexBuilder(this, id)
                 .setVertexType(vertexType)
                 .setCoordinates(coordinates)
                 .build();
-        insertVertex(vertex);
+        insertVertex(vertex, hanging);
         return vertex;
     }
 
@@ -70,6 +70,17 @@ public class ModelGraph extends MultiGraph {
         return Optional.empty();
     }
 
+    public InteriorNode insertInterior(String id, Point3d coordinates, boolean toRefine) {
+        InteriorNode interiorNode = new InteriorNode(this, id, coordinates);
+        Node node = this.addNode(interiorNode.getId());
+        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
+        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
+        node.setAttribute("ui.label", "R=" + (toRefine ? "T" : "F"));
+        node.addAttribute("ui.style", "fill-color: red;");
+        interiors.put(id, interiorNode);
+        return interiorNode;
+    }
+
     public InteriorNode insertInterior(String id, Vertex v1, Vertex v2, Vertex v3, Vertex... associatedNodes) {
         InteriorNode interiorNode = new InteriorNode(this, id, v1, v2, v3, associatedNodes);
         Node node = this.addNode(interiorNode.getId());
@@ -77,9 +88,9 @@ public class ModelGraph extends MultiGraph {
         node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
         node.addAttribute("ui.class", "important");
         interiors.put(id, interiorNode);
-        insertEdge(id.concat(v1.getId()), interiorNode, v1);
-        insertEdge(id.concat(v2.getId()), interiorNode, v2);
-        insertEdge(id.concat(v3.getId()), interiorNode, v3);
+        insertEdge(id.concat(v1.getId()), interiorNode, v1, false, "fill-color: blue;");
+        insertEdge(id.concat(v2.getId()), interiorNode, v2, false, "fill-color: blue;");
+        insertEdge(id.concat(v3.getId()), interiorNode, v3, false, "fill-color: blue;");
         return interiorNode;
     }
 
@@ -96,27 +107,34 @@ public class ModelGraph extends MultiGraph {
                 .filter(graphEdge -> graphEdge.getEdgeNodes().contains(interiors.get(id)))
                 .map(GraphEdge::getId)
                 .collect(Collectors.toList());
-        edgesToRemove
-                .forEach(this::deleteEdge);
+        edgesToRemove.forEach(this::deleteEdge);
         interiors.remove(id);
         this.removeNode(id);
     }
 
-    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2) {
-        GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2).build();
-        this.addEdge(graphEdge.getId(), n1, n2);
+    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border) {
+        return insertEdge(id, n1, n2, border, null);
+    }
+
+    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border, String uiStyle) {
+        GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2, border).build();
+        Edge edge = this.addEdge(graphEdge.getId(), n1, n2);
+        if (uiStyle != null) {
+            edge.addAttribute("ui.style", uiStyle);
+        }
+        edge.addAttribute("ui.label", "B=" + (border ? "T" : "F"));
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
     }
 
-    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean B) {
-        GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2)
-                .setB(B)
-                .build();
-        this.addEdge(graphEdge.getId(), n1, n2);
-        edges.put(graphEdge.getId(), graphEdge);
-        return graphEdge;
-    }
+//    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean B) {
+//        GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2)
+//                .setB(B)
+//                .build();
+//        this.addEdge(graphEdge.getId(), n1, n2);
+//        edges.put(graphEdge.getId(), graphEdge);
+//        return graphEdge;
+//    }
 
     public void deleteEdge(GraphNode n1, GraphNode n2) {
         Edge edge = n1.getEdgeBetween(n2);
@@ -160,9 +178,9 @@ public class ModelGraph extends MultiGraph {
         GraphEdge edge3 = getEdgeBetweenNodes(v1, v3)
                 .orElseThrow(() -> new RuntimeException("Unknown edge id"));
 
-        if(edge1.getL() >= edge2.getL() && edge1.getL() >= edge3.getL()) {
+        if(edge1.getLength() >= edge2.getLength() && edge1.getLength() >= edge3.getLength()) {
             return edge1;
-        }else if(edge2.getL() >= edge3.getL()) {
+        }else if(edge2.getLength() >= edge3.getLength()) {
             return edge2;
         }
         return edge3;
@@ -218,8 +236,8 @@ public class ModelGraph extends MultiGraph {
         return edges.values();
     }
 
-    public GraphEdge insertEdge(GraphEdge ge) {
-        return insertEdge(ge.getId(), ge.getNode0(), ge.getNode1(), ge.getB());
-    }
+//    public GraphEdge insertEdge(GraphEdge ge) {
+//        return insertEdge(ge.getId(), ge.getNode0(), ge.getNode1(), ge.getB());
+//    }
 
 }

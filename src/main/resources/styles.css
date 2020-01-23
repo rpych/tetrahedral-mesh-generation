@@ -1,6 +1,6 @@
 node {
-    fill-color: grey;
-    size: 5px;
+    fill-color: black;
+    size: 10px;
     stroke-mode: plain;
     stroke-color: black;
     stroke-width: 1px;
@@ -15,4 +15,9 @@ node.H {
 node.important {
     fill-color: red;
     size: 10px;
+}
+
+edge.interiors {
+    /*stroke-mode: dashes;*/
+    fill-color: blue;
 }
