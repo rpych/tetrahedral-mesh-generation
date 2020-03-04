@@ -27,22 +27,21 @@ public class ModelGraph extends MultiGraph {
         return edge.map(Element::getId).flatMap(this::getEdgeById);
     }
 
-    public Vertex insertVertex(Vertex vertex, boolean hanging) {
+    public Vertex insertVertex(Vertex vertex) {
         Node node = this.addNode(vertex.getId());
         node.addAttribute("ui.class", vertex.getVertexType().getSymbol());
-        node.addAttribute("ui.label", "H=" + (hanging ? "T" : "F"));
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, vertex.getXCoordinate(), vertex.getYCoordinate(), vertex.getZCoordinate());
         vertexes.put(vertex.getId(), vertex);
         return vertex;
     }
 
-    public Vertex insertVertex(String id, VertexType vertexType, Point3d coordinates, boolean hanging) {
+    public Vertex insertVertex(String id, VertexType vertexType, Point3d coordinates) {
         Vertex vertex = new Vertex.VertexBuilder(this, id)
                 .setVertexType(vertexType)
                 .setCoordinates(coordinates)
                 .build();
-        insertVertex(vertex, hanging);
+        insertVertex(vertex);
         return vertex;
     }
 
@@ -70,19 +69,18 @@ public class ModelGraph extends MultiGraph {
         return Optional.empty();
     }
 
-    public InteriorNode insertInterior(String id, Point3d coordinates, boolean toRefine) {
+    public InteriorNode insertInterior(String id, Point3d coordinates) {
         InteriorNode interiorNode = new InteriorNode(this, id, coordinates);
         Node node = this.addNode(interiorNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
-        node.setAttribute("ui.label", "R=" + (toRefine ? "T" : "F"));
         node.addAttribute("ui.style", "fill-color: red;");
         interiors.put(id, interiorNode);
         return interiorNode;
     }
 
-    public InteriorNode insertInterior(String id, Vertex v1, Vertex v2, Vertex v3, Vertex... associatedNodes) {
-        InteriorNode interiorNode = new InteriorNode(this, id, v1, v2, v3, associatedNodes);
+    public InteriorNode insertInterior(String id, Vertex v1, Vertex v2, Vertex v3) {
+        InteriorNode interiorNode = new InteriorNode(this, id, v1, v2, v3);
         Node node = this.addNode(interiorNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
@@ -122,19 +120,9 @@ public class ModelGraph extends MultiGraph {
         if (uiStyle != null) {
             edge.addAttribute("ui.style", uiStyle);
         }
-        edge.addAttribute("ui.label", "B=" + (border ? "T" : "F"));
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
     }
-
-//    public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean B) {
-//        GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2)
-//                .setB(B)
-//                .build();
-//        this.addEdge(graphEdge.getId(), n1, n2);
-//        edges.put(graphEdge.getId(), graphEdge);
-//        return graphEdge;
-//    }
 
     public void deleteEdge(GraphNode n1, GraphNode n2) {
         Edge edge = n1.getEdgeBetween(n2);

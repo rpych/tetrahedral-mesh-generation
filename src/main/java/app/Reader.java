@@ -2,60 +2,37 @@ package app;
 
 import model.*;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.lang.Double.parseDouble;
 
 public class Reader {
     public static void main(String[] args) {
-        Reader reader = new Reader();
-        try {
-            ModelGraph graph = reader.readGraphFromMgf(args[0]);
-            graph.display();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        ModelGraph graph = generateTetrahedra();
+        graph.display();
     }
 
-    private ModelGraph readGraphFromMgf(String path) throws IOException {
+    private static ModelGraph generateTetrahedra() {
         ModelGraph graph = new ModelGraph("Graph");
 
-        try (Stream<String> stream = Files.lines(Paths.get(path))) {
-            Map<Character, List<String>> entities = stream.collect(Collectors.groupingBy(line -> line.charAt(0)));
-            Map<String, Vertex> vertices = entities.get('N').stream()
-                    .map(node -> node.split(","))
-                    .collect(Collectors.toMap(n -> n[1],
-                            n -> graph.insertVertex(n[1],
-                                    VertexType.SIMPLE_NODE,
-                                    new Point3d(parseDouble(n[2]), parseDouble(n[3]), parseDouble(n[4])), parseBoolean(n[5]))));
-            Map<String, InteriorNode> interiors = entities.get('H').stream()
-                    .map(node -> node.split(","))
-                    .collect(Collectors.toMap(n -> n[1],
-                            n -> graph.insertInterior(n[1],
-                                    new Point3d(parseDouble(n[2]), parseDouble(n[3]), parseDouble(n[4])), parseBoolean(n[5]))));
-            entities.get('E').stream().map(edge -> edge.split(",")).forEach(e -> {
-                if (interiors.containsKey(e[2])) {
-                    graph.insertEdge(e[1], interiors.get(e[2]), vertices.get(e[3]), parseBoolean(e[4]), "fill-color: pink;");
-                } else if (interiors.containsKey(e[3])) {
-                    graph.insertEdge(e[1], vertices.get(e[2]), interiors.get(e[3]), parseBoolean(e[4]), "fill-color: pink;");
-                } else if (vertices.containsKey(e[2]) && vertices.containsKey(e[3])) {
-                    graph.insertEdge(e[1], vertices.get(e[2]), vertices.get(e[3]), parseBoolean(e[4]));
-                } else {
-                    System.err.println("Edge not found: " + e[1]);
-                }
-            });
-        }
+        List<Vertex> nodes = new ArrayList<>();
+        nodes.add(graph.insertVertex("n1", VertexType.SIMPLE_NODE, new Point3d(0., 0., 0.)));
+        nodes.add(graph.insertVertex("n2", VertexType.SIMPLE_NODE, new Point3d(1., 0., 0.)));
+        nodes.add(graph.insertVertex("n3", VertexType.SIMPLE_NODE, new Point3d(0.5, 0.866025, 0.)));
+        nodes.add(graph.insertVertex("n4", VertexType.SIMPLE_NODE, new Point3d(0.5, 0.433013, 0.816497)));
+
+        graph.insertEdge("e1", nodes.get(0), nodes.get(1), true);
+        graph.insertEdge("e2", nodes.get(1), nodes.get(2), true);
+        graph.insertEdge("e3", nodes.get(2), nodes.get(0), true);
+        graph.insertEdge("e4", nodes.get(0), nodes.get(3), true);
+        graph.insertEdge("e5", nodes.get(1), nodes.get(3), true);
+        graph.insertEdge("e6", nodes.get(2), nodes.get(3), true);
+
+        graph.insertInterior("f1", nodes.get(0), nodes.get(1), nodes.get(2));
+        graph.insertInterior("f2", nodes.get(0), nodes.get(1), nodes.get(3));
+        graph.insertInterior("f3", nodes.get(1), nodes.get(2), nodes.get(3));
+        graph.insertInterior("f4", nodes.get(2), nodes.get(0), nodes.get(3));
 
         return graph;
     }
 
-    private boolean parseBoolean(String bool) {
-        return bool.equals("true");
-    }
 }

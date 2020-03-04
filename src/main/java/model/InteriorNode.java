@@ -13,8 +13,6 @@ public class InteriorNode extends GraphNode {
 
     private  Triplet<Vertex, Vertex, Vertex> triangle;
 
-    private final List<Vertex> associatedNodes = new LinkedList<>();
-
     private boolean R;
 
     public InteriorNode(AbstractGraph graph, String id, Point3d coordinates) {
@@ -27,36 +25,21 @@ public class InteriorNode extends GraphNode {
         R = false;
     }
 
-    public InteriorNode(AbstractGraph graph, String id, Vertex v1, Vertex v2, Vertex v3, Vertex... associatedNodes) {
-        this(graph, id, v1, v2, v3);
-        this.associatedNodes.addAll(Arrays.asList(associatedNodes));
-    }
 
     public Triplet<Vertex, Vertex, Vertex> getTriangle(){
         return triangle;
     }
 
-    public void setPartitionRequired(boolean partitionRequired) {
-        R = partitionRequired;
+    public void setR(boolean R) {
+        this.R = R;
     }
 
-    public boolean isPartitionRequired() {
+    public boolean isR() {
         return R;
     }
 
     public Triplet<Vertex, Vertex, Vertex> getTriangleVertexes() {
         return triangle;
-    }
-
-    public List<Vertex> getAssociatedNodes() {
-        ModelGraph graph = (ModelGraph) this.getGraph();
-        List<Vertex> between0and1 = graph.getVertexesBetween(this.triangle.getValue0(), this.triangle.getValue1());
-        List<Vertex> between0and2 = graph.getVertexesBetween(this.triangle.getValue0(), this.triangle.getValue2());
-        List<Vertex> between1and2 = graph.getVertexesBetween(this.triangle.getValue1(), this.triangle.getValue2());
-
-        return Stream.of(between0and1, between0and2, between1and2)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
     }
 
     private static Point3d getInteriorPosition(Vertex v1, Vertex v2, Vertex v3) {

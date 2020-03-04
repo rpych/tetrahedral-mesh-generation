@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'pl.edu.agh.ki.a2s'
-version '0.2.1'
+version '0.3'
 
 sourceCompatibility = 1.8
 
