@@ -1,5 +1,3 @@
-# terrain-generator
+Template project for implementing tetrahedron-based (hyper)graph grammars productions.
 
-![Build Status](https://travis-ci.org/ra-v97/terrain-generator.svg?branch=master)
-
-A shared repository for CAD/CAE graph transformations
+Based on https://github.com/ra-v97/terrain-generator

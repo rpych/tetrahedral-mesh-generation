@@ -8,13 +8,13 @@ public abstract class GraphNode extends SingleNode {
 
     private final String symbol;
 
-    private final Point3d coordinates;
+    private final Coordinates coordinates;
 
     protected GraphNode(AbstractGraph graph, String id, String symbol, double xCoordinate, double yCoordinate, double zCoordinate) {
-        this(graph, id, symbol, new Point3d(xCoordinate, yCoordinate, zCoordinate));
+        this(graph, id, symbol, new Coordinates(xCoordinate, yCoordinate, zCoordinate));
     }
 
-    protected GraphNode(AbstractGraph graph, String id, String symbol, Point3d coordinates) {
+    protected GraphNode(AbstractGraph graph, String id, String symbol, Coordinates coordinates) {
         super(graph, id);
         super.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         this.symbol = symbol;
@@ -37,7 +37,7 @@ public abstract class GraphNode extends SingleNode {
         return coordinates.getZ();
     }
 
-    public Point3d getCoordinates(){
+    public Coordinates getCoordinates(){
         return  coordinates;
     }
 }
