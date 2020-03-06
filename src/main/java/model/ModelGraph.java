@@ -1,5 +1,7 @@
 package model;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import common.ElementAttributes;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
@@ -7,6 +9,7 @@ import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.javatuples.Triplet;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +23,13 @@ public class ModelGraph extends MultiGraph {
 
     public ModelGraph(String id) {
         super(id);
+    }
+
+    public ModelGraph(ModelGraph graph) {
+        super(graph.id + 1);
+        graph.vertices.values().forEach(this::insertVertex);
+        graph.faces.values().forEach(this::insertFace);
+        graph.edges.values().forEach(this::insertEdge);
     }
 
     public Optional<GraphEdge> getEdgeBetweenNodes(Vertex v1, Vertex v2) {
@@ -59,14 +69,18 @@ public class ModelGraph extends MultiGraph {
         return Optional.empty();
     }
 
-    public FaceNode insertFace(String id, Coordinates coordinates) {
-        FaceNode faceNode = new FaceNode(this, id, coordinates);
+    public FaceNode insertFace(FaceNode faceNode) {
         Node node = this.addNode(faceNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, faceNode.getXCoordinate(), faceNode.getYCoordinate(), faceNode.getZCoordinate());
         node.addAttribute("ui.style", "fill-color: red;");
         faces.put(id, faceNode);
         return faceNode;
+    }
+
+    public FaceNode insertFace(String id, Coordinates coordinates) {
+        FaceNode faceNode = new FaceNode(this, id, coordinates);
+        return insertFace(faceNode);
     }
 
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
@@ -80,14 +94,6 @@ public class ModelGraph extends MultiGraph {
         insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
         insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
         return faceNode;
-    }
-
-    public Optional<FaceNode> getFace(String id) {
-        return Optional.ofNullable(faces.get(id));
-    }
-
-    public Collection<FaceNode> getFaces() {
-        return faces.values();
     }
 
     public void removeFace(String id) {
@@ -110,6 +116,12 @@ public class ModelGraph extends MultiGraph {
         if (uiStyle != null) {
             edge.addAttribute("ui.style", uiStyle);
         }
+        edges.put(graphEdge.getId(), graphEdge);
+        return graphEdge;
+    }
+
+    public GraphEdge insertEdge(GraphEdge graphEdge) {
+        Edge edge = this.addEdge(graphEdge.getId(), graphEdge.getNode0().getId(), graphEdge.getNode1().getId());
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
     }
@@ -172,6 +184,14 @@ public class ModelGraph extends MultiGraph {
         return vertices.values();
     }
 
+    public Optional<FaceNode> getFace(String id) {
+        return Optional.ofNullable(faces.get(id));
+    }
+
+    public Collection<FaceNode> getFaces() {
+        return faces.values();
+    }
+
     public Optional<GraphEdge> getEdge(Vertex v1, Vertex v2) {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
@@ -221,8 +241,8 @@ public class ModelGraph extends MultiGraph {
                 - a.getY()*b.getX()*c.getZ();
     }
 
-//    public GraphEdge insertEdge(GraphEdge ge) {
-//        return insertEdge(ge.getId(), ge.getNode0(), ge.getNode1(), ge.getB());
-//    }
-
+    public void rotate() {
+        faces.values().forEach(GraphNode::rotate);
+        vertices.values().forEach(GraphNode::rotate);
+    }
 }

@@ -28,10 +28,6 @@ public final class Coordinates {
         return z;
     }
 
-    public Coordinates middlePoint(Coordinates rhs) {
-        return Coordinates.middlePoint(this, rhs);
-    }
-
     public double distance(Coordinates rhs) {
         return Coordinates.distance(this, rhs);
     }
@@ -43,11 +39,19 @@ public final class Coordinates {
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
+    public Coordinates middlePoint(Coordinates rhs) {
+        return Coordinates.middlePoint(this, rhs);
+    }
+
     public static Coordinates middlePoint(Coordinates p1, Coordinates p2) {
         double xs = p1.getX() + p2.getX();
         double ys = p1.getY() + p2.getY();
         double zs = p1.getZ() + p2.getZ();
         return new Coordinates(xs / 2d, ys / 2d, zs / 2d);
+    }
+
+    public Coordinates getRotation() {
+        return new Coordinates(y, z, x);
     }
 
     @Override

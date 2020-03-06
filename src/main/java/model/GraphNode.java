@@ -8,7 +8,7 @@ public abstract class GraphNode extends SingleNode {
 
     private final String symbol;
 
-    private final Coordinates coordinates;
+    private Coordinates coordinates;
 
     protected GraphNode(AbstractGraph graph, String id, String symbol, double xCoordinate, double yCoordinate, double zCoordinate) {
         this(graph, id, symbol, new Coordinates(xCoordinate, yCoordinate, zCoordinate));
@@ -21,8 +21,8 @@ public abstract class GraphNode extends SingleNode {
         this.coordinates = coordinates;
     }
 
-    public String getSymbol() {
-        return symbol;
+    public void rotate() {
+        coordinates = coordinates.getRotation();
     }
 
     public double getXCoordinate() {

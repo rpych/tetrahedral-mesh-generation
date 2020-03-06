@@ -1,6 +1,7 @@
 package app;
 
 import model.*;
+import visualization.Visualizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,8 +9,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         ModelGraph graph = generateTetrahedra();
-        graph.display();
-        graph.display();
+        Visualizer visualizer = new Visualizer(graph);
+        visualizer.visualize();
     }
 
     private static ModelGraph generateTetrahedra() {
