@@ -17,3 +17,5 @@ Struktura kodu jest prosta. GraphNode jest klasą abstrakcyjną, która dziedzic
 * ModelGraph::removeFace()
 * Coordinates::distance()
 * Coordinates::middlePoint()
+* Graph::getFace(id)
+* GraphNode::getId()
