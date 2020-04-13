@@ -8,10 +8,9 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        Transformator transformator = new Transformator();
         ModelGraph tetrahedra = generateP4Tetrahedra();
         tetrahedra.getFaceNonOptional("F_0,50_0,07_0,00").setR(true);
-        tetrahedra = transformator.makeP4(tetrahedra);
+        tetrahedra = Transformator.makeP4(tetrahedra);
         Visualizer visualizer = new Visualizer(tetrahedra);
         visualizer.visualize();
     }
