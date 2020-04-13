@@ -11,9 +11,10 @@ import org.javatuples.Triplet;
 
 public class Transformator{
 	
-	public static ModelGraph makeP4(ModelGraph tetrahedra, String startOppositeVertexID) {
+	public static ModelGraph makeP4(ModelGraph tetrahedra) {
 		checkTetrahedra(tetrahedra);
-		tetrahedra = breakFace(tetrahedra, startOppositeVertexID);
+		FaceNode face = findFaceToBreak(tetrahedra);
+		tetrahedra = breakFace(tetrahedra, face);
 //		tetrahedra = breakFace(tetrahedra, startOppositeVertexID);
 		return tetrahedra;
 	}
@@ -66,54 +67,74 @@ public class Transformator{
 		return true;
 	}
 	
-	// todo. Really brake faces
-	private static ModelGraph breakFace(ModelGraph tetrahedra, String oppositeVertexID) {
-//		System.out.println(oppositeVertexID);
-		ArrayList<Vertex> vID = new ArrayList<Vertex>();
-		for(Vertex vertex : tetrahedra.getVertices()) {
-			if(oppositeVertexID.equals(vertex.getId())) {
-				continue;
+	private static FaceNode findFaceToBreak(ModelGraph tetrahedra) {
+		for(FaceNode face : tetrahedra.getFaces()) {
+			if(face.isR()) {
+				return face;
 			}
-			vID.add(vertex);
-//			System.out.println("added vertex to brought face: " + vertex.getId());
 		}
+		return null;
+	}
+	
+	// todo. Really brake faces
+	private static ModelGraph breakFace(ModelGraph tetrahedra, FaceNode face) {
+////		System.out.println(oppositeVertexID);
+//		ArrayList<Vertex> vID = new ArrayList<Vertex>();
+//		for(Vertex vertex : tetrahedra.getVertices()) {
+//			if(oppositeVertexID.equals(vertex.getId())) {
+//				continue;
+//			}
+//			vID.add(vertex);
+////			System.out.println("added vertex to brought face: " + vertex.getId());
+//		}
+		Vertex v0, v1, v2, vNotInFace = null;
 		GraphEdge e01, e02, e12;
 		double e01len, e02len, e12len;
 		
-		e01 = tetrahedra.getEdgeNotOptional(vID.get(0), vID.get(1));
+		v0 = face.getTriangle().getValue0();
+		v1 = face.getTriangle().getValue1();
+		v2 = face.getTriangle().getValue2();
+		
+		for(Vertex vertex : tetrahedra.getVertices()) {
+			if(vertex.getId() != v0.getId() && vertex.getId() != v1.getId() && vertex.getId() != v2.getId()) {
+				vNotInFace = vertex;
+			}
+		}
+		
+		e01 = tetrahedra.getEdgeNotOptional(v0, v1);
 		e01len = e01.getLength();
-		e02 = tetrahedra.getEdgeNotOptional(vID.get(0), vID.get(2));
+		e02 = tetrahedra.getEdgeNotOptional(v0, v2);
 		e02len = e02.getLength();
-		e12 = tetrahedra.getEdgeNotOptional(vID.get(1), vID.get(2));
+		e12 = tetrahedra.getEdgeNotOptional(v1, v2);
 		e12len = e12.getLength();
 		
 		if(e01len > e02len && e01len > e12len) {
-			tetrahedra = addEdge(tetrahedra, vID.get(2), e01);
+			tetrahedra = addEdge(tetrahedra, v2, e01);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					tetrahedra.getVertexNonOptional(oppositeVertexID),
-					vID.get(0),
-					vID.get(1)
+					vNotInFace,
+					v0,
+					v1
 					);
-			FaceNode face = tetrahedra.getFace(triangle);
-			face.setR(true);
+			FaceNode faceToR = tetrahedra.getFace(triangle);
+			faceToR.setR(true);
 		}else if(e02len > e12len) {
-			tetrahedra = addEdge(tetrahedra, vID.get(1), e02);
+			tetrahedra = addEdge(tetrahedra, v1, e02);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					tetrahedra.getVertexNonOptional(oppositeVertexID),
-					vID.get(0),
-					vID.get(2)
+					vNotInFace,
+					v0,
+					v2
 					);
-			FaceNode face = tetrahedra.getFace(triangle);
-			face.setR(true);
+			FaceNode faceToR = tetrahedra.getFace(triangle);
+			faceToR.setR(true);
 		}else {
-			tetrahedra = addEdge(tetrahedra, vID.get(0), e12);
+			tetrahedra = addEdge(tetrahedra, v0, e12);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					tetrahedra.getVertexNonOptional(oppositeVertexID),
-					vID.get(1),
-					vID.get(2)
+					vNotInFace,
+					v1,
+					v2
 					);
-			FaceNode face = tetrahedra.getFace(triangle);
-			face.setR(true);
+			FaceNode faceToR = tetrahedra.getFace(triangle);
+			faceToR.setR(true);
 		}
 		
 		return tetrahedra;
