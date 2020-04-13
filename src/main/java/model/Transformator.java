@@ -106,36 +106,12 @@ public class Transformator{
 		e12len = e12.getLength();
 		
 		graph = addEdge(graph, vForNewEdge, eToSplit);
-		
-		if(e01len > e02len && e01len > e12len) {
-//			graph = addEdge(graph, v2, e01);
-			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					vNotInFace,
-					v0,
-					v1
-					);
-			FaceNode faceToR = graph.getFace(triangle);
-			faceToR.setR(true);
-		}else if(e02len > e12len) {
-//			graph = addEdge(graph, v1, e02);
-			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					vNotInFace,
-					v0,
-					v2
-					);
-			FaceNode faceToR = graph.getFace(triangle);
-			faceToR.setR(true);
-		}else {
-//			graph = addEdge(graph, v0, e12);
-			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
-					vNotInFace,
-					v1,
-					v2
-					);
-			FaceNode faceToR = graph.getFace(triangle);
-			faceToR.setR(true);
+		for(FaceNode faceNode : graph.getFaces()) {
+			if(!graph.areVertexesLinked(faceNode)) {
+				faceNode.setR(true);
+			}
 		}
-		
+
 		return graph;
 	}
 	

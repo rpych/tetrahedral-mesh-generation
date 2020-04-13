@@ -37,7 +37,7 @@ public class FaceNode extends GraphNode {
     public Triplet<Vertex, Vertex, Vertex> getTriangleVertices() {
         return triangle;
     }
-
+    
     private static Coordinates getFacePosition(Vertex v1, Vertex v2, Vertex v3) {
         return new Coordinates(getFaceXCoordinate(v1, v2, v3), getFaceYCoordinate(v1, v2, v3), getFaceZCoordinate(v1, v2, v3));
     }

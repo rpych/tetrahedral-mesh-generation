@@ -239,6 +239,10 @@ public class ModelGraph extends MultiGraph {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
     
+    public boolean isEdgeBetween(Vertex v1, Vertex v2) {
+    	return null != v1.getEdgeBetween(v2);
+    }
+    
     public GraphEdge getEdgeNotOptional(Vertex v1, Vertex v2) {
         return edges.get(v1.getEdgeBetween(v2).getId());
     }
@@ -291,5 +295,12 @@ public class ModelGraph extends MultiGraph {
     public void rotate() {
         faces.values().forEach(GraphNode::rotate);
         vertices.values().forEach(GraphNode::rotate);
+    }
+    
+    public boolean areVertexesLinked(FaceNode face) {
+    	Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+    	return this.isEdgeBetween(triangle.getValue0(), triangle.getValue1()) &&
+    			this.isEdgeBetween(triangle.getValue0(), triangle.getValue2()) &&
+    			this.isEdgeBetween(triangle.getValue1(), triangle.getValue2());
     }
 }
