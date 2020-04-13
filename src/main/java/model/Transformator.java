@@ -80,58 +80,100 @@ public class Transformator{
 	}
 	
 	//totest. To refactor
-	private static ModelGraph breakFace(ModelGraph tetrahedra, FaceNode face) {
-		Vertex v0, v1, v2, vNotInFace = null;
-		GraphEdge e01, e02, e12;
+	private static ModelGraph breakFace(ModelGraph graph, FaceNode face) {
+		Vertex v0, v1, v2, vForNewEdge, vNotInFace = null;
+		GraphEdge e01, e02, e12, eToSplit;
 		double e01len, e02len, e12len;
+		
+		eToSplit = findLongestEdge(graph, face);
+		vForNewEdge = getVertexForNewEdge(face, eToSplit);
 		
 		v0 = face.getTriangle().getValue0();
 		v1 = face.getTriangle().getValue1();
 		v2 = face.getTriangle().getValue2();
 		
-		for(Vertex vertex : tetrahedra.getVertices()) {
+		for(Vertex vertex : graph.getVertices()) {
 			if(vertex.getId() != v0.getId() && vertex.getId() != v1.getId() && vertex.getId() != v2.getId()) {
 				vNotInFace = vertex;
 			}
 		}
 		
-		e01 = tetrahedra.getEdgeNotOptional(v0, v1);
+		e01 = graph.getEdgeNotOptional(v0, v1);
 		e01len = e01.getLength();
-		e02 = tetrahedra.getEdgeNotOptional(v0, v2);
+		e02 = graph.getEdgeNotOptional(v0, v2);
 		e02len = e02.getLength();
-		e12 = tetrahedra.getEdgeNotOptional(v1, v2);
+		e12 = graph.getEdgeNotOptional(v1, v2);
 		e12len = e12.getLength();
 		
+		graph = addEdge(graph, vForNewEdge, eToSplit);
+		
 		if(e01len > e02len && e01len > e12len) {
-			tetrahedra = addEdge(tetrahedra, v2, e01);
+//			graph = addEdge(graph, v2, e01);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
 					vNotInFace,
 					v0,
 					v1
 					);
-			FaceNode faceToR = tetrahedra.getFace(triangle);
+			FaceNode faceToR = graph.getFace(triangle);
 			faceToR.setR(true);
 		}else if(e02len > e12len) {
-			tetrahedra = addEdge(tetrahedra, v1, e02);
+//			graph = addEdge(graph, v1, e02);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
 					vNotInFace,
 					v0,
 					v2
 					);
-			FaceNode faceToR = tetrahedra.getFace(triangle);
+			FaceNode faceToR = graph.getFace(triangle);
 			faceToR.setR(true);
 		}else {
-			tetrahedra = addEdge(tetrahedra, v0, e12);
+//			graph = addEdge(graph, v0, e12);
 			Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<Vertex, Vertex, Vertex>(
 					vNotInFace,
 					v1,
 					v2
 					);
-			FaceNode faceToR = tetrahedra.getFace(triangle);
+			FaceNode faceToR = graph.getFace(triangle);
 			faceToR.setR(true);
 		}
 		
-		return tetrahedra;
+		return graph;
+	}
+	
+	private static GraphEdge findLongestEdge(ModelGraph graph, FaceNode face) {
+		Vertex v0, v1, v2;
+		GraphEdge e01, e02, e12;
+		double e01len, e02len, e12len;
+		v0 = face.getTriangle().getValue0();
+		v1 = face.getTriangle().getValue1();
+		v2 = face.getTriangle().getValue2();
+		e01 = graph.getEdgeNotOptional(v0, v1);
+		e01len = e01.getLength();
+		e02 = graph.getEdgeNotOptional(v0, v2);
+		e02len = e02.getLength();
+		e12 = graph.getEdgeNotOptional(v1, v2);
+		e12len = e12.getLength();
+		if(e01len > e02len && e01len > e12len) {
+			return e01;
+		}
+		if(e02len > e12len) {
+			return e02;
+		}
+		return e12;
+	}
+	
+	private static Vertex getVertexForNewEdge(FaceNode face, GraphEdge eToSplit){
+		Pair<GraphNode, GraphNode> edgeNodes = eToSplit.getEdgeNodes();
+		Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+		
+		String vId = triangle.getValue0().getId();
+		if(!vId.equals(edgeNodes.getValue0()) && !vId.equals(edgeNodes.getValue1())) {
+			return triangle.getValue0();
+		}
+		vId = triangle.getValue1().getId();
+		if(!vId.equals(edgeNodes.getValue0()) && !vId.equals(edgeNodes.getValue1())) {
+			return triangle.getValue1();
+		}
+		return triangle.getValue2();
 	}
 	
 	// todo set proper vertex name and edgeName
