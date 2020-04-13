@@ -15,7 +15,10 @@ public class Transformator{
 		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(tetrahedra);
 		tetrahedra = breakFace(tetrahedra, face);
-//		tetrahedra = breakFace(tetrahedra, startOppositeVertexID);
+//		while(face != null) {
+//			tetrahedra = breakFace(tetrahedra, face);
+//			face = findFaceToBreak(tetrahedra);
+//		}
 		return tetrahedra;
 	}
 	
@@ -76,17 +79,8 @@ public class Transformator{
 		return null;
 	}
 	
-	// todo. Really brake faces
+	//totest. To refactor
 	private static ModelGraph breakFace(ModelGraph tetrahedra, FaceNode face) {
-////		System.out.println(oppositeVertexID);
-//		ArrayList<Vertex> vID = new ArrayList<Vertex>();
-//		for(Vertex vertex : tetrahedra.getVertices()) {
-//			if(oppositeVertexID.equals(vertex.getId())) {
-//				continue;
-//			}
-//			vID.add(vertex);
-////			System.out.println("added vertex to brought face: " + vertex.getId());
-//		}
 		Vertex v0, v1, v2, vNotInFace = null;
 		GraphEdge e01, e02, e12;
 		double e01len, e02len, e12len;
@@ -160,15 +154,7 @@ public class Transformator{
 	}
 	
 	private static ModelGraph removeFace(ModelGraph modelGraph, Triplet<Vertex, Vertex, Vertex> triangle) {
-		String idToRemove = "";
 		FaceNode face = modelGraph.getFace(triangle);
-//		for(FaceNode face : modelGraph.getFaces()) {
-//			Triplet<Vertex, Vertex, Vertex> t = face.getTriangle();
-//			if(t.contains(triangle.getValue0()) && t.contains(triangle.getValue1()) && t.contains(triangle.getValue2())) {
-//				idToRemove = face.getId();
-//				break;
-//			}
-//		}
 		modelGraph.removeFace(face.getId());
 		return modelGraph;
 	}

@@ -112,6 +112,7 @@ public class ModelGraph extends MultiGraph {
     	String id = "F_" + String.format ("%.2f", coordinates.getX()) + "_"
 				+ String.format ("%.2f", coordinates.getY()) + "_"
 				+ String.format ("%.2f", coordinates.getZ());
+//    	System.out.println(id);
         return insertFace(id, v1, v2, v3);
     }
     
