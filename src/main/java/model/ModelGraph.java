@@ -52,6 +52,13 @@ public class ModelGraph extends MultiGraph {
         insertVertex(vertex);
         return vertex;
     }
+    
+    public Vertex insertVertexAutoNamed(Coordinates coordinates) {
+		String vertexName = "V_" + String.format ("%.2f", coordinates.getX()) + "_"
+				+ String.format ("%.2f", coordinates.getY()) + "_"
+				+ String.format ("%.2f", coordinates.getZ());
+		return insertVertex(vertexName, coordinates);
+    }
 
     public Optional<Vertex> removeVertex(String id) {
         Vertex vertex = vertices.remove(id);
@@ -96,6 +103,18 @@ public class ModelGraph extends MultiGraph {
         return faceNode;
     }
 
+    public FaceNode insertFaceAutoNamed(Vertex v1, Vertex v2, Vertex v3) {
+    	Coordinates  coordinates = new Coordinates(
+    			(v1.getXCoordinate() + v2.getXCoordinate() + v3.getXCoordinate()) / 3d,
+    			(v1.getYCoordinate() + v2.getYCoordinate() + v3.getYCoordinate()) / 3d,
+    			(v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d
+    			);
+    	String id = "F_" + String.format ("%.2f", coordinates.getX()) + "_"
+				+ String.format ("%.2f", coordinates.getY()) + "_"
+				+ String.format ("%.2f", coordinates.getZ());
+        return insertFace(id, v1, v2, v3);
+    }
+    
     public void removeFace(String id) {
         List<String> edgesToRemove = edges.values().stream()
                 .filter(graphEdge -> graphEdge.getEdgeNodes().contains(faces.get(id)))
@@ -108,6 +127,11 @@ public class ModelGraph extends MultiGraph {
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border) {
         return insertEdge(id, n1, n2, border, null);
+    }
+    
+    public GraphEdge insertEdgeAutoNamed(GraphNode n1, GraphNode n2, boolean border) {
+    	String edgeName = "E" + n1.getId() + "to" + n2.getId();
+        return insertEdge(edgeName, n1, n2, border, null);
     }
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border, String uiStyle) {
@@ -179,6 +203,10 @@ public class ModelGraph extends MultiGraph {
     public Optional<Vertex> getVertex(String id) {
         return Optional.ofNullable(vertices.get(id));
     }
+    
+    public Vertex getVertexNonOptional(String id) {
+        return vertices.get(id);
+    }
 
     public Collection<Vertex> getVertices() {
         return vertices.values();
@@ -187,6 +215,20 @@ public class ModelGraph extends MultiGraph {
     public Optional<FaceNode> getFace(String id) {
         return Optional.ofNullable(faces.get(id));
     }
+    
+    public FaceNode getFaceNonOptional(String id) {
+        return faces.get(id);
+    }
+    
+    public FaceNode getFace(Triplet<Vertex, Vertex, Vertex> triangle) {
+    	for(FaceNode face : faces.values()) {
+			Triplet<Vertex, Vertex, Vertex> t = face.getTriangle();
+			if(t.contains(triangle.getValue0()) && t.contains(triangle.getValue1()) && t.contains(triangle.getValue2())) {
+				return face;
+			}
+		}
+    	return null;
+    }
 
     public Collection<FaceNode> getFaces() {
         return faces.values();
@@ -194,6 +236,10 @@ public class ModelGraph extends MultiGraph {
 
     public Optional<GraphEdge> getEdge(Vertex v1, Vertex v2) {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
+    }
+    
+    public GraphEdge getEdgeNotOptional(Vertex v1, Vertex v2) {
+        return edges.get(v1.getEdgeBetween(v2).getId());
     }
 
     public Collection<GraphEdge> getEdges() {

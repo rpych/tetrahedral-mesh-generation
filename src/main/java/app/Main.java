@@ -8,7 +8,12 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        ModelGraph graph = generateTetrahedra();
+        Transformator transformator = new Transformator();
+        ModelGraph tetrahedra = generateP4Tetrahedra();
+//        tetrahedra.getFaceNonOptional("F_0,67_0,07_0,00").setR(true);
+//        graph = transformator.makeP4
+        
+        ModelGraph graph = transformator.makeP4(tetrahedra, "V_0,60_0,40_0,80");
         Visualizer visualizer = new Visualizer(graph);
         visualizer.visualize();
     }
@@ -29,12 +34,35 @@ public class Main {
         graph.insertEdge("e5", nodes.get(1), nodes.get(3), true);
         graph.insertEdge("e6", nodes.get(2), nodes.get(3), true);
 
-        graph.insertFace("t1", nodes.get(0), nodes.get(1), nodes.get(2));
-        graph.insertFace("t2", nodes.get(0), nodes.get(1), nodes.get(3));
-        graph.insertFace("t3", nodes.get(1), nodes.get(2), nodes.get(3));
-        graph.insertFace("t4", nodes.get(2), nodes.get(0), nodes.get(3));
+        graph.insertFace("t4", nodes.get(0), nodes.get(1), nodes.get(2));
+        graph.insertFace("t3", nodes.get(0), nodes.get(1), nodes.get(3));
+        graph.insertFace("t1", nodes.get(1), nodes.get(2), nodes.get(3));
+        graph.insertFace("t2", nodes.get(2), nodes.get(0), nodes.get(3));
 
         return graph;
     }
+    
+    private static ModelGraph generateP4Tetrahedra() {
+        ModelGraph graph = new ModelGraph("Graph");
 
+        List<Vertex> nodes = new ArrayList<>();
+        nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.6, 0.40, 0.80)));
+        nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.5, 0.2, 0.)));
+        nodes.add(graph.insertVertexAutoNamed(new Coordinates(1., 0., 0.)));
+        nodes.add(graph.insertVertexAutoNamed(new Coordinates(0., 0., 0.)));
+        
+        graph.insertEdgeAutoNamed(nodes.get(0), nodes.get(1), true);
+        graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(2), true);
+        graph.insertEdgeAutoNamed(nodes.get(2), nodes.get(0), true);
+        graph.insertEdgeAutoNamed(nodes.get(0), nodes.get(3), true);
+        graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(3), true);
+        graph.insertEdgeAutoNamed(nodes.get(2), nodes.get(3), true);
+
+        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2));
+        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
+        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3));
+        graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
+
+        return graph;
+    }
 }

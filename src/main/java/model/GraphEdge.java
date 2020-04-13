@@ -26,6 +26,12 @@ public class GraphEdge extends AbstractEdge {
     public double getLength() {
         return Coordinates.distance(edgeNodes.getValue0().getCoordinates(), edgeNodes.getValue1().getCoordinates());
     }
+    
+    public Coordinates getMiddlePointCoordinates() {
+		GraphNode n0 = edgeNodes.getValue0();
+		GraphNode n1 = edgeNodes.getValue1();
+		return Coordinates.middlePoint(n0.getCoordinates(), n1.getCoordinates());
+    }
 
     public static class GraphEdgeBuilder {
 

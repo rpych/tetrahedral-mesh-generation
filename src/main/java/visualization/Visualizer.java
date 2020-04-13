@@ -8,6 +8,8 @@ import model.ModelGraph;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
+import org.graphstream.graph.Node;
+
 public class Visualizer {
     private ModelGraph graph;
 
@@ -20,6 +22,10 @@ public class Visualizer {
         ModelGraph clone = new ModelGraph(graph);
         clone.rotate();
         clone.display();
+        for(Node node: clone.getEachNode())
+        {
+        	node.addAttribute("ui.label", node.getId());
+        }
     }
 
 }
