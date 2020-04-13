@@ -79,31 +79,10 @@ public class Transformator{
 		return null;
 	}
 	
-	//totest. To refactor
+	//totest
 	private static ModelGraph breakFace(ModelGraph graph, FaceNode face) {
-		Vertex v0, v1, v2, vForNewEdge, vNotInFace = null;
-		GraphEdge e01, e02, e12, eToSplit;
-		double e01len, e02len, e12len;
-		
-		eToSplit = findLongestEdge(graph, face);
-		vForNewEdge = getVertexForNewEdge(face, eToSplit);
-		
-		v0 = face.getTriangle().getValue0();
-		v1 = face.getTriangle().getValue1();
-		v2 = face.getTriangle().getValue2();
-		
-		for(Vertex vertex : graph.getVertices()) {
-			if(vertex.getId() != v0.getId() && vertex.getId() != v1.getId() && vertex.getId() != v2.getId()) {
-				vNotInFace = vertex;
-			}
-		}
-		
-		e01 = graph.getEdgeNotOptional(v0, v1);
-		e01len = e01.getLength();
-		e02 = graph.getEdgeNotOptional(v0, v2);
-		e02len = e02.getLength();
-		e12 = graph.getEdgeNotOptional(v1, v2);
-		e12len = e12.getLength();
+		GraphEdge eToSplit= findLongestEdge(graph, face);
+		Vertex vForNewEdge= getVertexForNewEdge(face, eToSplit);
 		
 		graph = addEdge(graph, vForNewEdge, eToSplit);
 		for(FaceNode faceNode : graph.getFaces()) {
@@ -115,6 +94,7 @@ public class Transformator{
 		return graph;
 	}
 	
+	// toCorrect
 	private static GraphEdge findLongestEdge(ModelGraph graph, FaceNode face) {
 		Vertex v0, v1, v2;
 		GraphEdge e01, e02, e12;
