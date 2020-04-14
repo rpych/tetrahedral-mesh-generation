@@ -15,6 +15,8 @@ public class Transformator{
 		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(tetrahedra);
 		tetrahedra = breakFace(tetrahedra, face);
+		face = findFaceToBreak(tetrahedra);
+		tetrahedra = breakFace(tetrahedra, face);
 //		while(face != null) {
 //			tetrahedra = breakFace(tetrahedra, face);
 //			face = findFaceToBreak(tetrahedra);
@@ -81,10 +83,31 @@ public class Transformator{
 	
 	//totest
 	private static ModelGraph breakFace(ModelGraph graph, FaceNode face) {
-		GraphEdge eToSplit= findLongestEdge(graph, face);
-		Vertex vForNewEdge= getVertexForNewEdge(face, eToSplit);
-		
-		graph = addEdge(graph, vForNewEdge, eToSplit);
+		GraphEdge eToSplit= findLongestFaceEdge(graph, face);
+		if(null != eToSplit) {
+			Vertex vForNewEdge= getVertexForNewEdge(face, eToSplit);
+			
+			graph = addEdge(graph, vForNewEdge, eToSplit);
+		}else {
+			Pair<Vertex, Vertex> newEdgeVertexes = findNewEdgeVertexes(graph, face);
+			
+			graph.insertEdgeAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), false);
+			
+			Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+			graph = removeFace(graph, triangle);
+			if(triangle.getValue0().getId() != newEdgeVertexes.getValue0().getId() &&
+					triangle.getValue0().getId() != newEdgeVertexes.getValue1().getId()) {
+				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue0());
+			}
+			if(triangle.getValue1().getId() != newEdgeVertexes.getValue0().getId() &&
+					triangle.getValue1().getId() != newEdgeVertexes.getValue1().getId()) {
+				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue1());
+			}
+			if(triangle.getValue2().getId() != newEdgeVertexes.getValue0().getId() &&
+					triangle.getValue2().getId() != newEdgeVertexes.getValue1().getId()) {
+				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue2());
+			}
+		}
 		for(FaceNode faceNode : graph.getFaces()) {
 			if(!graph.areVertexesLinked(faceNode)) {
 				faceNode.setR(true);
@@ -95,13 +118,26 @@ public class Transformator{
 	}
 	
 	// toCorrect
-	private static GraphEdge findLongestEdge(ModelGraph graph, FaceNode face) {
+	private static GraphEdge findLongestFaceEdge(ModelGraph graph, FaceNode face) {
 		Vertex v0, v1, v2;
 		GraphEdge e01, e02, e12;
 		double e01len, e02len, e12len;
+		boolean wasEdge01 = true, wasEdge02 = true, wasEdge12 = true;
 		v0 = face.getTriangle().getValue0();
 		v1 = face.getTriangle().getValue1();
 		v2 = face.getTriangle().getValue2();
+		if(!graph.isEdgeBetween(v0, v1)) {
+			graph.insertEdgeAutoNamed(v0, v1, false);
+			wasEdge01 = false;
+		}
+		if(!graph.isEdgeBetween(v0, v2)) {
+			graph.insertEdgeAutoNamed(v0, v2, false);
+			wasEdge02 = false;
+		}
+		if(!graph.isEdgeBetween(v1, v2)) {
+			graph.insertEdgeAutoNamed(v1, v2, false);
+			wasEdge12 = false;
+		}
 		e01 = graph.getEdgeNotOptional(v0, v1);
 		e01len = e01.getLength();
 		e02 = graph.getEdgeNotOptional(v0, v2);
@@ -109,12 +145,62 @@ public class Transformator{
 		e12 = graph.getEdgeNotOptional(v1, v2);
 		e12len = e12.getLength();
 		if(e01len > e02len && e01len > e12len) {
-			return e01;
+			if(wasEdge01) {
+				return e01;			
+			}
+			return null;
 		}
 		if(e02len > e12len) {
-			return e02;
+			if(wasEdge02) {
+				return e02;
+			}
+			return null;
 		}
-		return e12;
+		if(wasEdge12) {
+			return e12;
+		}
+		return null;
+	}
+	
+	private static Pair<Vertex, Vertex> findNewEdgeVertexes(ModelGraph graph, FaceNode face){
+		Vertex v0, v1, v2;
+		GraphEdge e01, e02, e12;
+		double e01len, e02len, e12len;
+		boolean wasEdge01 = true, wasEdge02 = true, wasEdge12 = true;
+		v0 = face.getTriangle().getValue0();
+		v1 = face.getTriangle().getValue1();
+		v2 = face.getTriangle().getValue2();
+		if(!graph.isEdgeBetween(v0, v1)) {
+			graph.insertEdgeAutoNamed(v0, v1, false);
+			wasEdge01 = false;
+		}
+		if(!graph.isEdgeBetween(v0, v2)) {
+			graph.insertEdgeAutoNamed(v0, v2, false);
+			wasEdge02 = false;
+		}
+		if(!graph.isEdgeBetween(v1, v2)) {
+			graph.insertEdgeAutoNamed(v1, v2, false);
+			wasEdge12 = false;
+		}
+		e01 = graph.getEdgeNotOptional(v0, v1);
+		e01len = e01.getLength();
+		e02 = graph.getEdgeNotOptional(v0, v2);
+		e02len = e02.getLength();
+		e12 = graph.getEdgeNotOptional(v1, v2);
+		e12len = e12.getLength();
+		if(e01len > e02len && e01len > e12len) {
+			Coordinates coordinates = e01.getMiddlePointCoordinates();
+			String id = graph.buildVertexName(coordinates);
+			return new Pair<Vertex, Vertex>(v2, graph.getVertexNonOptional(id));
+		}
+		if(e02len > e12len) {
+			Coordinates coordinates = e02.getMiddlePointCoordinates();
+			String id = graph.buildVertexName(coordinates);
+			return new Pair<Vertex, Vertex>(v1, graph.getVertexNonOptional(id));
+		}
+		Coordinates coordinates = e12.getMiddlePointCoordinates();
+		String id = graph.buildVertexName(coordinates);
+		return new Pair<Vertex, Vertex>(v0, graph.getVertexNonOptional(id));
 	}
 	
 	private static Vertex getVertexForNewEdge(FaceNode face, GraphEdge eToSplit){

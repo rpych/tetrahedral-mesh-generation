@@ -53,10 +53,15 @@ public class ModelGraph extends MultiGraph {
         return vertex;
     }
     
-    public Vertex insertVertexAutoNamed(Coordinates coordinates) {
-		String vertexName = "V_" + String.format ("%.2f", coordinates.getX()) + "_"
+    public String buildVertexName(Coordinates coordinates) {
+    	String vertexName = "V_" + String.format ("%.2f", coordinates.getX()) + "_"
 				+ String.format ("%.2f", coordinates.getY()) + "_"
 				+ String.format ("%.2f", coordinates.getZ());
+    	return vertexName;
+    }
+    
+    public Vertex insertVertexAutoNamed(Coordinates coordinates) {
+		String vertexName = buildVertexName(coordinates);
 		return insertVertex(vertexName, coordinates);
     }
 
