@@ -14,14 +14,35 @@ public class Transformator{
 	public static ModelGraph makeP4(ModelGraph tetrahedra) {
 		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(tetrahedra);
-		tetrahedra = breakFace(tetrahedra, face);
-		face = findFaceToBreak(tetrahedra);
-		tetrahedra = breakFace(tetrahedra, face);
+//		tetrahedra = breakFace(tetrahedra, face);
+//		face = findFaceToBreak(tetrahedra);
+//		tetrahedra = breakFace(tetrahedra, face);
+		while(face != null) {
+			tetrahedra = breakFace(tetrahedra, face);
+	        System.out.println("\nInside while:");
+			for(GraphEdge e : tetrahedra.getEdges()) {
+				System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+			}
+			face = findFaceToBreak(tetrahedra);
+	        System.out.println("\nInside while2:");
+			for(GraphEdge e : tetrahedra.getEdges()) {
+				System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+			}
+		}
+		return tetrahedra;
+	}
+	
+	public static ModelGraph makeP4Grid(ModelGraph grid) {
+//		checkTetrahedra(tetrahedra);
+		FaceNode face = findFaceToBreak(grid);
+		grid = breakFace(grid, face);
+		face = findFaceToBreak(grid);
+		grid = breakFace(grid, face);
 //		while(face != null) {
 //			tetrahedra = breakFace(tetrahedra, face);
 //			face = findFaceToBreak(tetrahedra);
 //		}
-		return tetrahedra;
+		return grid;
 	}
 	
 	//todo subfunctions
@@ -85,8 +106,10 @@ public class Transformator{
 	private static ModelGraph breakFace(ModelGraph graph, FaceNode face) {
 		GraphEdge eToSplit= findLongestFaceEdge(graph, face);
 		if(null != eToSplit) {
+//			System.out.println(eToSplit.getId());
 			Vertex vForNewEdge= getVertexForNewEdge(face, eToSplit);
-			
+//			System.out.println(vForNewEdge.getId());
+			System.out.println("Edge will be deleted");
 			graph = addEdge(graph, vForNewEdge, eToSplit);
 		}else {
 			Pair<Vertex, Vertex> newEdgeVertexes = findNewEdgeVertexes(graph, face);
@@ -108,7 +131,9 @@ public class Transformator{
 				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue2());
 			}
 		}
+//		System.out.println("\nAfter breaking face, setting faces to refinement:");
 		for(FaceNode faceNode : graph.getFaces()) {
+//			System.out.println(faceNode.getId() + " " + graph.areVertexesLinked(faceNode));
 			if(!graph.areVertexesLinked(faceNode)) {
 				faceNode.setR(true);
 			}
@@ -144,6 +169,15 @@ public class Transformator{
 		e02len = e02.getLength();
 		e12 = graph.getEdgeNotOptional(v1, v2);
 		e12len = e12.getLength();
+		if(!wasEdge01) {
+			graph.removeEdge(e01.getId());
+		}
+		if(!wasEdge02) {
+			graph.removeEdge(e02.getId());
+		}
+		if(!wasEdge12) {
+			graph.removeEdge(e12.getId());
+		}
 		if(e01len > e02len && e01len > e12len) {
 			if(wasEdge01) {
 				return e01;			
@@ -208,13 +242,18 @@ public class Transformator{
 		Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
 		
 		String vId = triangle.getValue0().getId();
-		if(!vId.equals(edgeNodes.getValue0()) && !vId.equals(edgeNodes.getValue1())) {
+//		System.out.println(vId);
+//		System.out.println("edge first vertex id: " + edgeNodes.getValue0().getId() + ", edge second vertex id: " + edgeNodes.getValue1().getId());
+		
+		if(!vId.equals(edgeNodes.getValue0().getId()) && !vId.equals(edgeNodes.getValue1().getId())) {
 			return triangle.getValue0();
 		}
 		vId = triangle.getValue1().getId();
-		if(!vId.equals(edgeNodes.getValue0()) && !vId.equals(edgeNodes.getValue1())) {
+//		System.out.println(vId);
+		if(!vId.equals(edgeNodes.getValue0().getId()) && !vId.equals(edgeNodes.getValue1().getId())) {
 			return triangle.getValue1();
 		}
+//		System.out.println(vId);
 		return triangle.getValue2();
 	}
 	
@@ -224,7 +263,15 @@ public class Transformator{
 		
 		modelGraph.insertEdgeAutoNamed(vertex, newVertex, false);
 		
+		System.out.println("\nInside addEdge");
+		for(GraphEdge e : modelGraph.getEdges()) {
+			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+		}
+		System.out.println(edge.getId() + " will be deleted");
 		modelGraph.deleteEdge(edge.getId());
+		for(GraphEdge e : modelGraph.getEdges()) {
+			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+		}
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue0(), newVertex, true);
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue1(), newVertex, true);
 		
@@ -234,6 +281,11 @@ public class Transformator{
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue0());
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue1());
 		
+        System.out.println("\nAt the end of addEdge");
+		for(GraphEdge e : modelGraph.getEdges()) {
+			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+		}
+        
 		return modelGraph;
 	}
 	
