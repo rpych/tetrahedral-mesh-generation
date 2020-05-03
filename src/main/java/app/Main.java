@@ -2,7 +2,6 @@ package app;
 
 import model.*;
 import visualization.MatlabVisualizer;
-import visualization.Visualizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,8 +20,7 @@ public class Main {
         tetrahedra = Transformator.makeP4(tetrahedra);
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
         matlabVisualizer.saveCode();
-        Visualizer visualizer = new Visualizer(tetrahedra);
-        visualizer.visualize();
+        System.out.println("Program ended successfully");
     }
 
     private static ModelGraph generateTetrahedra() {
