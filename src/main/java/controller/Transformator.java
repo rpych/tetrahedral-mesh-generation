@@ -12,8 +12,17 @@ import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
 public class Transformator{
+	public ModelGraph graph;
 	
-	public static ModelGraph transform(ModelGraph tetrahedra) {
+	public Transformator(ModelGraph graph) {
+		this.graph = graph;
+	}
+	
+	public ModelGraph transform() {
+		return transform(this.graph);
+	}
+	
+	public ModelGraph transform(ModelGraph tetrahedra) {
 		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(tetrahedra);
 //		tetrahedra = breakFace(tetrahedra, face);
@@ -34,7 +43,7 @@ public class Transformator{
 		return tetrahedra;
 	}
 	
-	public static ModelGraph makeP4Grid(ModelGraph grid) {
+	public ModelGraph makeP4Grid(ModelGraph grid) {
 //		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(grid);
 		grid = breakFace(grid, face);
@@ -48,7 +57,7 @@ public class Transformator{
 	}
 	
 	//todo subfunctions
-	private static void checkTetrahedra(ModelGraph modelGraph){
+	private void checkTetrahedra(ModelGraph modelGraph){
 		String commonError = "\nGiven ModelGraph for makeP4 is not correct tetrahedra!!!\n";
 		if(!hasFourVertexes(modelGraph)) {
 			throw new IllegalArgumentException(commonError + "Graph has not four vertexes");
@@ -62,12 +71,12 @@ public class Transformator{
 	}
 	
 	// todo - check if vertexes are different
-	private static boolean hasFourVertexes(ModelGraph modelGraph) {
+	private boolean hasFourVertexes(ModelGraph modelGraph) {
 		return 4 == modelGraph.getVertices().size();
 	}
 	
 	//todo
-	private static boolean hasCorrectEdges(ModelGraph modelGraph) {
+	private boolean hasCorrectEdges(ModelGraph modelGraph) {
 		if(6 + 3 * 4 != modelGraph.getEdges().size()) {
 //			for(GraphEdge edge : modelGraph.getEdges()) {
 //				System.out.println(edge.getEdgeNodes());
@@ -88,14 +97,14 @@ public class Transformator{
 	}
 	
 	//todo - check faces positions
-	private static boolean hasCorrectFaces(ModelGraph modelGraph) {
+	private boolean hasCorrectFaces(ModelGraph modelGraph) {
 		if(4 != modelGraph.getFaces().size()) {
 			return false;
 		}
 		return true;
 	}
 	
-	private static FaceNode findFaceToBreak(ModelGraph tetrahedra) {
+	private FaceNode findFaceToBreak(ModelGraph tetrahedra) {
 		for(FaceNode face : tetrahedra.getFaces()) {
 			if(face.isR()) {
 				return face;
@@ -105,7 +114,7 @@ public class Transformator{
 	}
 	
 	//totest
-	private static ModelGraph breakFace(ModelGraph graph, FaceNode face) {
+	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
 		GraphEdge eToSplit= findLongestFaceEdge(graph, face);
 		if(null != eToSplit) {
 //			System.out.println(eToSplit.getId());
@@ -145,7 +154,7 @@ public class Transformator{
 	}
 	
 	// toCorrect
-	private static GraphEdge findLongestFaceEdge(ModelGraph graph, FaceNode face) {
+	private GraphEdge findLongestFaceEdge(ModelGraph graph, FaceNode face) {
 		Vertex v0, v1, v2;
 		GraphEdge e01, e02, e12;
 		double e01len, e02len, e12len;
@@ -198,7 +207,7 @@ public class Transformator{
 		return null;
 	}
 	
-	private static Pair<Vertex, Vertex> findNewEdgeVertexes(ModelGraph graph, FaceNode face){
+	private Pair<Vertex, Vertex> findNewEdgeVertexes(ModelGraph graph, FaceNode face){
 		Vertex v0, v1, v2;
 		GraphEdge e01, e02, e12;
 		double e01len, e02len, e12len;
@@ -239,7 +248,7 @@ public class Transformator{
 		return new Pair<Vertex, Vertex>(v0, graph.getVertexNonOptional(id));
 	}
 	
-	private static Vertex getVertexForNewEdge(FaceNode face, GraphEdge eToSplit){
+	private Vertex getVertexForNewEdge(FaceNode face, GraphEdge eToSplit){
 		Pair<GraphNode, GraphNode> edgeNodes = eToSplit.getEdgeNodes();
 		Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
 		
@@ -260,7 +269,7 @@ public class Transformator{
 	}
 	
 	// todo set proper vertex name and edgeName
-	private static ModelGraph addEdge(ModelGraph modelGraph, Vertex vertex, GraphEdge edge) {
+	private ModelGraph addEdge(ModelGraph modelGraph, Vertex vertex, GraphEdge edge) {
 		Vertex newVertex = modelGraph.insertVertexAutoNamed(edge.getMiddlePointCoordinates());
 		
 		modelGraph.insertEdgeAutoNamed(vertex, newVertex, false);
@@ -291,7 +300,7 @@ public class Transformator{
 		return modelGraph;
 	}
 	
-	private static ModelGraph removeFace(ModelGraph modelGraph, Triplet<Vertex, Vertex, Vertex> triangle) {
+	private ModelGraph removeFace(ModelGraph modelGraph, Triplet<Vertex, Vertex, Vertex> triangle) {
 		FaceNode face = modelGraph.getFace(triangle);
 		modelGraph.removeFace(face.getId());
 		return modelGraph;

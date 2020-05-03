@@ -1,8 +1,10 @@
 package app;
 
-import model.*;
-import visualization.MatlabVisualizer;
+import model.ModelGraph;
+import model.Vertex;
+import model.Coordinates;
 import controller.Transformator;
+import visualization.MatlabVisualizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,8 @@ public class Main {
 	
     public static void main(String[] args) {
         ModelGraph tetrahedra = generateTetrahedra();
-        tetrahedra = Transformator.transform(tetrahedra);
+        Transformator transformator = new Transformator(tetrahedra);
+        tetrahedra = transformator.transform();
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
         matlabVisualizer.saveCode();
         System.out.println("Program ended successfully");
