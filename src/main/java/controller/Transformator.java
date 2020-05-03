@@ -22,96 +22,25 @@ public class Transformator{
 		return transform(this.graph);
 	}
 	
-	public ModelGraph transform(ModelGraph tetrahedra) {
-		checkTetrahedra(tetrahedra);
-		FaceNode face = findFaceToBreak(tetrahedra);
-//		tetrahedra = breakFace(tetrahedra, face);
-//		face = findFaceToBreak(tetrahedra);
-//		tetrahedra = breakFace(tetrahedra, face);
+	public ModelGraph transform(ModelGraph graph) {
+		FaceNode face = findFaceToBreak(graph);
 		while(face != null) {
-			tetrahedra = breakFace(tetrahedra, face);
-	        System.out.println("\nInside while:");
-			for(GraphEdge e : tetrahedra.getEdges()) {
-				System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-			}
-			face = findFaceToBreak(tetrahedra);
-	        System.out.println("\nInside while2:");
-			for(GraphEdge e : tetrahedra.getEdges()) {
-				System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-			}
+			graph = breakFace(graph, face);
+			face = findFaceToBreak(graph);
 		}
-		return tetrahedra;
+		return graph;
 	}
 	
-	public ModelGraph makeP4Grid(ModelGraph grid) {
-//		checkTetrahedra(tetrahedra);
-		FaceNode face = findFaceToBreak(grid);
-		grid = breakFace(grid, face);
-		face = findFaceToBreak(grid);
-		grid = breakFace(grid, face);
-//		while(face != null) {
-//			tetrahedra = breakFace(tetrahedra, face);
-//			face = findFaceToBreak(tetrahedra);
-//		}
-		return grid;
-	}
-	
-	//todo subfunctions
-	private void checkTetrahedra(ModelGraph modelGraph){
-		String commonError = "\nGiven ModelGraph for makeP4 is not correct tetrahedra!!!\n";
-		if(!hasFourVertexes(modelGraph)) {
-			throw new IllegalArgumentException(commonError + "Graph has not four vertexes");
-		}
-		if(!hasCorrectEdges(modelGraph)) {
-			throw new IllegalArgumentException(commonError + "Graph has not correct edges");
-		}
-		if(!hasCorrectFaces(modelGraph)) {
-			throw new IllegalArgumentException(commonError + "Graph has not correct faces");
-		}
-	}
-	
-	// todo - check if vertexes are different
-	private boolean hasFourVertexes(ModelGraph modelGraph) {
-		return 4 == modelGraph.getVertices().size();
-	}
-	
-	//todo
-	private boolean hasCorrectEdges(ModelGraph modelGraph) {
-		if(6 + 3 * 4 != modelGraph.getEdges().size()) {
-//			for(GraphEdge edge : modelGraph.getEdges()) {
-//				System.out.println(edge.getEdgeNodes());
-//			}
-//			System.out.println(modelGraph.getEdges().size());
-			return false;
-		}
-//		Collection<Vertex> vertices = (Collection<Vertex>)modelGraph.getVertices();
-//		System.out.println(vertices.size());
-//		return null != modelGraph.getEdge(vertices., vertices.get(1)) &&
-//				null != modelGraph.getEdge(vertices.get(0), vertices.get(2)) &&
-//				null != modelGraph.getEdge(vertices.get(0), vertices.get(3)) &&
-//				null != modelGraph.getEdge(vertices.get(1), vertices.get(2)) &&
-//				null != modelGraph.getEdge(vertices.get(1), vertices.get(3)) &&
-//				null != modelGraph.getEdge(vertices.get(2), vertices.get(3));
-		
-		return true;
-	}
-	
-	//todo - check faces positions
-	private boolean hasCorrectFaces(ModelGraph modelGraph) {
-		if(4 != modelGraph.getFaces().size()) {
-			return false;
-		}
-		return true;
-	}
-	
-	private FaceNode findFaceToBreak(ModelGraph tetrahedra) {
-		for(FaceNode face : tetrahedra.getFaces()) {
+	private FaceNode findFaceToBreak(ModelGraph graph) {
+		for(FaceNode face : graph.getFaces()) {
 			if(face.isR()) {
 				return face;
 			}
 		}
 		return null;
 	}
+	
+	
 	
 	//totest
 	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
@@ -304,5 +233,54 @@ public class Transformator{
 		FaceNode face = modelGraph.getFace(triangle);
 		modelGraph.removeFace(face.getId());
 		return modelGraph;
+	}
+	
+	// FUNCTIONS NOT USED FOR NOW. MAYBE THEY WONT BE USED AT ALL.
+	//todo subfunctions
+	private void checkTetrahedra(ModelGraph modelGraph){
+		String commonError = "\nGiven ModelGraph for makeP4 is not correct tetrahedra!!!\n";
+		if(!hasFourVertexes(modelGraph)) {
+			throw new IllegalArgumentException(commonError + "Graph has not four vertexes");
+		}
+		if(!hasCorrectEdges(modelGraph)) {
+			throw new IllegalArgumentException(commonError + "Graph has not correct edges");
+		}
+		if(!hasCorrectFaces(modelGraph)) {
+			throw new IllegalArgumentException(commonError + "Graph has not correct faces");
+		}
+	}
+	
+	// todo - check if vertexes are different
+	private boolean hasFourVertexes(ModelGraph modelGraph) {
+		return 4 == modelGraph.getVertices().size();
+	}
+	
+	//todo
+	private boolean hasCorrectEdges(ModelGraph modelGraph) {
+		if(6 + 3 * 4 != modelGraph.getEdges().size()) {
+//				for(GraphEdge edge : modelGraph.getEdges()) {
+//					System.out.println(edge.getEdgeNodes());
+//				}
+//				System.out.println(modelGraph.getEdges().size());
+			return false;
+		}
+//			Collection<Vertex> vertices = (Collection<Vertex>)modelGraph.getVertices();
+//			System.out.println(vertices.size());
+//			return null != modelGraph.getEdge(vertices., vertices.get(1)) &&
+//					null != modelGraph.getEdge(vertices.get(0), vertices.get(2)) &&
+//					null != modelGraph.getEdge(vertices.get(0), vertices.get(3)) &&
+//					null != modelGraph.getEdge(vertices.get(1), vertices.get(2)) &&
+//					null != modelGraph.getEdge(vertices.get(1), vertices.get(3)) &&
+//					null != modelGraph.getEdge(vertices.get(2), vertices.get(3));
+		
+		return true;
+	}
+	
+	//todo - check faces positions
+	private boolean hasCorrectFaces(ModelGraph modelGraph) {
+		if(4 != modelGraph.getFaces().size()) {
+			return false;
+		}
+		return true;
 	}
 }
