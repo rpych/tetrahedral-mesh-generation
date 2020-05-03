@@ -13,7 +13,7 @@ import org.javatuples.Triplet;
 
 public class Transformator{
 	
-	public static ModelGraph makeP4(ModelGraph tetrahedra) {
+	public static ModelGraph transform(ModelGraph tetrahedra) {
 		checkTetrahedra(tetrahedra);
 		FaceNode face = findFaceToBreak(tetrahedra);
 //		tetrahedra = breakFace(tetrahedra, face);

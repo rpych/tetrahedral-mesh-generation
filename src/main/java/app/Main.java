@@ -11,8 +11,7 @@ public class Main {
 	
     public static void main(String[] args) {
         ModelGraph tetrahedra = generateTetrahedra();
-        tetrahedra.getFaceNonOptional("F_0,50_0,07_0,00").setR(true);
-        tetrahedra = Transformator.makeP4(tetrahedra);
+        tetrahedra = Transformator.transform(tetrahedra);
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
         matlabVisualizer.saveCode();
         System.out.println("Program ended successfully");
@@ -36,7 +35,7 @@ public class Main {
 
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2));
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
-        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3));
+        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);;
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
 
         return graph;
