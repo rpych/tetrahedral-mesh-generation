@@ -40,18 +40,15 @@ public class Transformator{
 		return null;
 	}
 	
-	
-	
-	//totest
+	// to correct
 	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
-		GraphEdge eToSplit= findLongestFaceEdge(graph, face);
-		if(null != eToSplit) {
-//			System.out.println(eToSplit.getId());
-			Vertex vForNewEdge= getVertexForNewEdge(face, eToSplit);
-//			System.out.println(vForNewEdge.getId());
+		Pair<Vertex, Vertex> vertexes = findLongestFaceEdge(graph, face);
+		if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
+			Vertex vForNewEdge= getVertexForNewEdge(face, vertexes);
 			System.out.println("Edge will be deleted");
+			GraphEdge eToSplit = graph.getEdgeNotOptional(vertexes.getValue0(), vertexes.getValue1());
 			graph = addEdge(graph, vForNewEdge, eToSplit);
-		}else {
+		} else {
 			Pair<Vertex, Vertex> newEdgeVertexes = findNewEdgeVertexes(graph, face);
 			
 			graph.insertEdgeAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), false);
@@ -70,7 +67,9 @@ public class Transformator{
 					triangle.getValue2().getId() != newEdgeVertexes.getValue1().getId()) {
 				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue2());
 			}
+			
 		}
+		
 //		System.out.println("\nAfter breaking face, setting faces to refinement:");
 		for(FaceNode faceNode : graph.getFaces()) {
 //			System.out.println(faceNode.getId() + " " + graph.areVertexesLinked(faceNode));
@@ -82,58 +81,22 @@ public class Transformator{
 		return graph;
 	}
 	
-	// toCorrect
-	private GraphEdge findLongestFaceEdge(ModelGraph graph, FaceNode face) {
+	//todo: if two or three edges are equal then return that with hanging node
+	private Pair<Vertex, Vertex> findLongestFaceEdge(ModelGraph graph, FaceNode face) {
 		Vertex v0, v1, v2;
-		GraphEdge e01, e02, e12;
-		double e01len, e02len, e12len;
-		boolean wasEdge01 = true, wasEdge02 = true, wasEdge12 = true;
+		double len01, len02, len12;
 		v0 = face.getTriangle().getValue0();
 		v1 = face.getTriangle().getValue1();
 		v2 = face.getTriangle().getValue2();
-		if(!graph.isEdgeBetween(v0, v1)) {
-			graph.insertEdgeAutoNamed(v0, v1, false);
-			wasEdge01 = false;
+		len01 = Coordinates.distance(v0.getCoordinates(), v1.getCoordinates());
+		len02 = Coordinates.distance(v0.getCoordinates(), v2.getCoordinates());
+		len12 = Coordinates.distance(v1.getCoordinates(), v2.getCoordinates());
+		if(len01 >= len02 && len01 >= len12) {
+			return new Pair<Vertex, Vertex>(v0, v1);
+		} else if(len02 >= len01 && len02 >= len12) {
+			return new Pair<Vertex, Vertex>(v0, v2);
 		}
-		if(!graph.isEdgeBetween(v0, v2)) {
-			graph.insertEdgeAutoNamed(v0, v2, false);
-			wasEdge02 = false;
-		}
-		if(!graph.isEdgeBetween(v1, v2)) {
-			graph.insertEdgeAutoNamed(v1, v2, false);
-			wasEdge12 = false;
-		}
-		e01 = graph.getEdgeNotOptional(v0, v1);
-		e01len = e01.getLength();
-		e02 = graph.getEdgeNotOptional(v0, v2);
-		e02len = e02.getLength();
-		e12 = graph.getEdgeNotOptional(v1, v2);
-		e12len = e12.getLength();
-		if(!wasEdge01) {
-			graph.removeEdge(e01.getId());
-		}
-		if(!wasEdge02) {
-			graph.removeEdge(e02.getId());
-		}
-		if(!wasEdge12) {
-			graph.removeEdge(e12.getId());
-		}
-		if(e01len > e02len && e01len > e12len) {
-			if(wasEdge01) {
-				return e01;			
-			}
-			return null;
-		}
-		if(e02len > e12len) {
-			if(wasEdge02) {
-				return e02;
-			}
-			return null;
-		}
-		if(wasEdge12) {
-			return e12;
-		}
-		return null;
+		return new Pair<Vertex, Vertex>(v1, v2);
 	}
 	
 	private Pair<Vertex, Vertex> findNewEdgeVertexes(ModelGraph graph, FaceNode face){
@@ -177,23 +140,15 @@ public class Transformator{
 		return new Pair<Vertex, Vertex>(v0, graph.getVertexNonOptional(id));
 	}
 	
-	private Vertex getVertexForNewEdge(FaceNode face, GraphEdge eToSplit){
-		Pair<GraphNode, GraphNode> edgeNodes = eToSplit.getEdgeNodes();
+	private Vertex getVertexForNewEdge(FaceNode face, Pair<Vertex, Vertex> vertexes){
 		Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
-		
-		String vId = triangle.getValue0().getId();
-//		System.out.println(vId);
-//		System.out.println("edge first vertex id: " + edgeNodes.getValue0().getId() + ", edge second vertex id: " + edgeNodes.getValue1().getId());
-		
-		if(!vId.equals(edgeNodes.getValue0().getId()) && !vId.equals(edgeNodes.getValue1().getId())) {
+		if(!triangle.getValue0().getId().equals(vertexes.getValue0().getId()) &&
+				!triangle.getValue0().getId().equals(vertexes.getValue1().getId())) {
 			return triangle.getValue0();
-		}
-		vId = triangle.getValue1().getId();
-//		System.out.println(vId);
-		if(!vId.equals(edgeNodes.getValue0().getId()) && !vId.equals(edgeNodes.getValue1().getId())) {
+		}else if(!triangle.getValue1().getId().equals(vertexes.getValue0().getId()) &&
+				!triangle.getValue1().getId().equals(vertexes.getValue1().getId())) {
 			return triangle.getValue1();
 		}
-//		System.out.println(vId);
 		return triangle.getValue2();
 	}
 	
