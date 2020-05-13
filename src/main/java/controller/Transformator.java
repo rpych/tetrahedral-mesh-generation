@@ -51,24 +51,8 @@ public class Transformator{
 			graph = addEdge(graph, vForNewEdge, eToSplit);
 		} else {
 			Pair<Vertex, Vertex> newEdgeVertexes = findNewEdgeVertexes(graph, face);
-			
 			graph.insertEdgeAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), false);
-			
-			Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
-			graph = removeFace(graph, triangle);
-			if(triangle.getValue0().getId() != newEdgeVertexes.getValue0().getId() &&
-					triangle.getValue0().getId() != newEdgeVertexes.getValue1().getId()) {
-				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue0());
-			}
-			if(triangle.getValue1().getId() != newEdgeVertexes.getValue0().getId() &&
-					triangle.getValue1().getId() != newEdgeVertexes.getValue1().getId()) {
-				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue1());
-			}
-			if(triangle.getValue2().getId() != newEdgeVertexes.getValue0().getId() &&
-					triangle.getValue2().getId() != newEdgeVertexes.getValue1().getId()) {
-				graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue2());
-			}
-			
+			graph = splitFace(graph, face, newEdgeVertexes);
 		}
 
 		return graph;
@@ -188,6 +172,24 @@ public class Transformator{
 			if(!graph.areVertexesLinked(faceNode)) {
 				faceNode.setR(true);
 			}
+		}
+		return graph;
+	}
+	
+	private ModelGraph splitFace(ModelGraph graph, FaceNode face, Pair<Vertex, Vertex> newEdgeVertexes) {
+		Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+		graph = removeFace(graph, triangle);
+		if(triangle.getValue0().getId() != newEdgeVertexes.getValue0().getId() &&
+				triangle.getValue0().getId() != newEdgeVertexes.getValue1().getId()) {
+			graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue0());
+		}
+		if(triangle.getValue1().getId() != newEdgeVertexes.getValue0().getId() &&
+				triangle.getValue1().getId() != newEdgeVertexes.getValue1().getId()) {
+			graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue1());
+		}
+		if(triangle.getValue2().getId() != newEdgeVertexes.getValue0().getId() &&
+				triangle.getValue2().getId() != newEdgeVertexes.getValue1().getId()) {
+			graph.insertFaceAutoNamed(newEdgeVertexes.getValue0(), newEdgeVertexes.getValue1(), triangle.getValue2());
 		}
 		return graph;
 	}
