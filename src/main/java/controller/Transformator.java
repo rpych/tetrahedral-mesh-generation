@@ -26,6 +26,7 @@ public class Transformator{
 		FaceNode face = findFaceToBreak(graph);
 		while(face != null) {
 			graph = breakFace(graph, face);
+			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}
 		return graph;
@@ -42,7 +43,7 @@ public class Transformator{
 	
 	// to correct
 	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
-		Pair<Vertex, Vertex> vertexes = findLongestFaceEdge(graph, face);
+		Pair<Vertex, Vertex> vertexes = findLongestEdgeOfFace(graph, face);
 		if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
 			Vertex vForNewEdge= getVertexForNewEdge(face, vertexes);
 			System.out.println("Edge will be deleted");
@@ -69,14 +70,12 @@ public class Transformator{
 			}
 			
 		}
-		
-		graph = markFacesToRefinement(graph);
 
 		return graph;
 	}
 	
 	//todo: if two or three edges are equal then return that with hanging node
-	private Pair<Vertex, Vertex> findLongestFaceEdge(ModelGraph graph, FaceNode face) {
+	private Pair<Vertex, Vertex> findLongestEdgeOfFace(ModelGraph graph, FaceNode face) {
 		Vertex v0, v1, v2;
 		double len01, len02, len12;
 		v0 = face.getTriangle().getValue0();
@@ -184,7 +183,7 @@ public class Transformator{
 		return modelGraph;
 	}
 	
-	private ModelGraph markFacesToRefinement(ModelGraph graph) {
+	private ModelGraph markFacesToBreak(ModelGraph graph) {
 		for(FaceNode faceNode : graph.getFaces()) {
 			if(!graph.areVertexesLinked(faceNode)) {
 				faceNode.setR(true);
