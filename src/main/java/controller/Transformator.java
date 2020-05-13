@@ -70,13 +70,7 @@ public class Transformator{
 			
 		}
 		
-//		System.out.println("\nAfter breaking face, setting faces to refinement:");
-		for(FaceNode faceNode : graph.getFaces()) {
-//			System.out.println(faceNode.getId() + " " + graph.areVertexesLinked(faceNode));
-			if(!graph.areVertexesLinked(faceNode)) {
-				faceNode.setR(true);
-			}
-		}
+		graph = markFacesToRefinement(graph);
 
 		return graph;
 	}
@@ -188,6 +182,15 @@ public class Transformator{
 		FaceNode face = modelGraph.getFace(triangle);
 		modelGraph.removeFace(face.getId());
 		return modelGraph;
+	}
+	
+	private ModelGraph markFacesToRefinement(ModelGraph graph) {
+		for(FaceNode faceNode : graph.getFaces()) {
+			if(!graph.areVertexesLinked(faceNode)) {
+				faceNode.setR(true);
+			}
+		}
+		return graph;
 	}
 	
 	// FUNCTIONS NOT USED FOR NOW. MAYBE THEY WONT BE USED AT ALL.
