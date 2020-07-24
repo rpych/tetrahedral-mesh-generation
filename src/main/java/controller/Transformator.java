@@ -26,9 +26,42 @@ public class Transformator{
 		FaceNode face = findFaceToBreak(graph);
 		while(face != null) {
 			graph = breakFace(graph, face);
+			graph = addNewFaces(graph);
 			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}
+		return graph;
+	}
+	
+	private ModelGraph addNewFaces(ModelGraph graph) {
+//		Vertex vForFace1 = null, vForFace2 = null, vForFace3 = null;
+//		List<String> triedToAdd = new ArrayList<String>();
+//		do {
+//			vForFace1 = null;
+//			vForFace2 = null;
+//			vForFace3 = null;
+//			for(GraphEdge edge: graph.getEdges()) {
+//	//			System.out.println(edge.getNode0().getClass().toString());
+//				if(edge.getNode0().getClass().toString().equals("class model.Vertex") &&
+//						edge.getNode1().getClass().toString().equals("class model.Vertex")) {
+//					Vertex v1 = edge.getNode0();
+//					Vertex v2 = edge.getNode1();
+//					for(Vertex v3: graph.getVertices()) {
+//						if(graph.isEdgeBetween(v1, v3) && graph.isEdgeBetween(v2, v3)) {
+//							vForFace1 = v1;
+//							vForFace2 = v2;
+//							vForFace3 = v3;
+//						}
+//					}
+//				}
+//			}
+//			try {
+//				graph.insertFaceAutoNamed(vForFace1, vForFace2, vForFace3);
+//				System.out.println("new face added!");
+//			} catch(org.graphstream.graph.IdAlreadyInUseException e){
+//				// TO REFACTOR
+//			}
+//		}while(vForFace1 != null || vForFace2 != null || vForFace3 != null);
 		return graph;
 	}
 	
@@ -135,15 +168,15 @@ public class Transformator{
 		
 		modelGraph.insertEdgeAutoNamed(vertex, newVertex, false);
 		
-		System.out.println("\nInside addEdge");
-		for(GraphEdge e : modelGraph.getEdges()) {
-			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-		}
-		System.out.println(edge.getId() + " will be deleted");
+//		System.out.println("\nInside addEdge");
+//		for(GraphEdge e : modelGraph.getEdges()) {
+//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//		}
+//		System.out.println(edge.getId() + " will be deleted");
 		modelGraph.deleteEdge(edge.getId());
-		for(GraphEdge e : modelGraph.getEdges()) {
-			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-		}
+//		for(GraphEdge e : modelGraph.getEdges()) {
+//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//		}
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue0(), newVertex, true);
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue1(), newVertex, true);
 		
@@ -153,10 +186,10 @@ public class Transformator{
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue0());
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue1());
 		
-        System.out.println("\nAt the end of addEdge");
-		for(GraphEdge e : modelGraph.getEdges()) {
-			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-		}
+//        System.out.println("\nAt the end of addEdge");
+//		for(GraphEdge e : modelGraph.getEdges()) {
+//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//		}
         
 		return modelGraph;
 	}
