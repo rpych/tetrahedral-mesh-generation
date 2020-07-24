@@ -218,6 +218,12 @@ public class ModelGraph extends MultiGraph {
         return vertices.values();
     }
 
+    public int getVerticesNum() { return vertices.size(); }
+
+    public int getEdgesNum() { return edges.size(); }
+
+    public int getFacesNum() { return faces.size(); }
+
     public Optional<FaceNode> getFace(String id) {
         return Optional.ofNullable(faces.get(id));
     }
@@ -244,8 +250,12 @@ public class ModelGraph extends MultiGraph {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
     
-    public boolean isEdgeBetween(Vertex v1, Vertex v2) {
+    /*public boolean isEdgeBetween(Vertex v1, Vertex v2) {
     	return null != v1.getEdgeBetween(v2);
+    }*/
+
+    public boolean isEdgeBetween(GraphNode v1, GraphNode v2) {
+        return null != v1.getEdgeBetween(v2);
     }
     
     public GraphEdge getEdgeNotOptional(Vertex v1, Vertex v2) {

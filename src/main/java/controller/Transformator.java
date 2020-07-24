@@ -11,7 +11,7 @@ import java.util.Optional;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
-public class Transformator{
+public class Transformator implements ITransformator{
 	public ModelGraph graph;
 	
 	public Transformator(ModelGraph graph) {
