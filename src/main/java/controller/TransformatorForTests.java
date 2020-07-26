@@ -39,7 +39,7 @@ public class TransformatorForTests implements ITransformator {
         Pair<Vertex, Vertex> vertexes = findLongestEdgeOfFace(graph, face);
         if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
             Vertex vForNewEdge= getVertexForNewEdge(face, vertexes);
-            System.out.println("Edge will be deleted");
+//            System.out.println("Edge will be deleted");
             GraphEdge eToSplit = graph.getEdgeNotOptional(vertexes.getValue0(), vertexes.getValue1());
             graph = addEdge(graph, vForNewEdge, eToSplit);
         } else {
@@ -128,14 +128,14 @@ public class TransformatorForTests implements ITransformator {
 
         modelGraph.insertEdgeAutoNamed(vertex, newVertex, false);
 
-        System.out.println("\nInside addEdge");
+//        System.out.println("\nInside addEdge");
         for(GraphEdge e : modelGraph.getEdges()) {
-            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
         }
-        System.out.println(edge.getId() + " will be deleted");
+//        System.out.println(edge.getId() + " will be deleted");
         modelGraph.deleteEdge(edge.getId());
         for(GraphEdge e : modelGraph.getEdges()) {
-            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
         }
         modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue0(), newVertex, true);
         modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue1(), newVertex, true);
@@ -146,9 +146,9 @@ public class TransformatorForTests implements ITransformator {
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue0());
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue1());
 
-        System.out.println("\nAt the end of addEdge");
+//        System.out.println("\nAt the end of addEdge");
         for(GraphEdge e : modelGraph.getEdges()) {
-            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
+//            System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
         }
 
         return modelGraph;

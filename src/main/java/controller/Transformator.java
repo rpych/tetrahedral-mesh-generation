@@ -34,34 +34,14 @@ public class Transformator implements ITransformator{
 	}
 	
 	private ModelGraph addNewFaces(ModelGraph graph) {
-//		Vertex vForFace1 = null, vForFace2 = null, vForFace3 = null;
-//		List<String> triedToAdd = new ArrayList<String>();
-//		do {
-//			vForFace1 = null;
-//			vForFace2 = null;
-//			vForFace3 = null;
-//			for(GraphEdge edge: graph.getEdges()) {
-//	//			System.out.println(edge.getNode0().getClass().toString());
-//				if(edge.getNode0().getClass().toString().equals("class model.Vertex") &&
-//						edge.getNode1().getClass().toString().equals("class model.Vertex")) {
-//					Vertex v1 = edge.getNode0();
-//					Vertex v2 = edge.getNode1();
-//					for(Vertex v3: graph.getVertices()) {
-//						if(graph.isEdgeBetween(v1, v3) && graph.isEdgeBetween(v2, v3)) {
-//							vForFace1 = v1;
-//							vForFace2 = v2;
-//							vForFace3 = v3;
-//						}
-//					}
-//				}
+//		Collection<GraphEdge> edges = graph.getEdges();
+//		for(GraphEdge edge : edges) {
+////			System.out.println(edge.getId());
+//			if(edge.getId().startsWith("E")) {
+////				System.out.println(edge.getId());
+//				Pair<Vertex, Vertex> nodes = edge.getEdgeNodes();
 //			}
-//			try {
-//				graph.insertFaceAutoNamed(vForFace1, vForFace2, vForFace3);
-//				System.out.println("new face added!");
-//			} catch(org.graphstream.graph.IdAlreadyInUseException e){
-//				// TO REFACTOR
-//			}
-//		}while(vForFace1 != null || vForFace2 != null || vForFace3 != null);
+//		}
 		return graph;
 	}
 	
@@ -79,7 +59,7 @@ public class Transformator implements ITransformator{
 		Pair<Vertex, Vertex> vertexes = findLongestEdgeOfFace(graph, face);
 		if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
 			Vertex vForNewEdge= getVertexForNewEdge(face, vertexes);
-			System.out.println("Edge will be deleted");
+//			System.out.println("Edge will be deleted");
 			GraphEdge eToSplit = graph.getEdgeNotOptional(vertexes.getValue0(), vertexes.getValue1());
 			graph = addEdge(graph, vForNewEdge, eToSplit);
 		} else {
