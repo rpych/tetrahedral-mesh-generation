@@ -164,34 +164,19 @@ public class Transformator implements ITransformator{
 	}
 	
 	// todo set proper vertex name and edgeName
-	private ModelGraph addEdge(ModelGraph modelGraph, Vertex vertex, GraphEdge edge) {
+	public ModelGraph addEdge(ModelGraph modelGraph, Vertex vertex, GraphEdge edge) {
 		Vertex newVertex = modelGraph.insertVertexAutoNamed(edge.getMiddlePointCoordinates());
-		
 		modelGraph.insertEdgeAutoNamed(vertex, newVertex, false);
 		
-//		System.out.println("\nInside addEdge");
-//		for(GraphEdge e : modelGraph.getEdges()) {
-//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-//		}
-//		System.out.println(edge.getId() + " will be deleted");
 		modelGraph.deleteEdge(edge.getId());
-//		for(GraphEdge e : modelGraph.getEdges()) {
-//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-//		}
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue0(), newVertex, true);
 		modelGraph.insertEdgeAutoNamed(edge.getEdgeNodes().getValue1(), newVertex, true);
 		
 		Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<>(vertex, (Vertex)edge.getEdgeNodes().getValue0(), (Vertex)edge.getEdgeNodes().getValue1());
 		modelGraph = removeFace(modelGraph, triangle);
-		
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue0());
         modelGraph.insertFaceAutoNamed(vertex, newVertex, (Vertex)edge.getEdgeNodes().getValue1());
 		
-//        System.out.println("\nAt the end of addEdge");
-//		for(GraphEdge e : modelGraph.getEdges()) {
-//			System.out.println(e.getNode0().getId() + " " + e.getNode1().getId());
-//		}
-        
 		return modelGraph;
 	}
 	

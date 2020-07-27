@@ -167,4 +167,24 @@ class GraphTransformatorTest {
             assertTrue(r);
         }
     }
+    
+    @Test
+    void addEdgeShouldRemoveOldEdge() {
+    	 ModelGraph graph = new ModelGraph("Graph");
+         Vertex v1 = graph.insertVertexAutoNamed(new Coordinates(0.0, 0.0, 0.0));
+         Vertex v2 = graph.insertVertexAutoNamed(new Coordinates(2.0, 0.0, 0.0));
+         Vertex v3 = graph.insertVertexAutoNamed(new Coordinates(1.0, 1.0, 0.0));
+         GraphEdge e1 = graph.insertEdgeAutoNamed(v1, v2, true);
+         GraphEdge e2 = graph.insertEdgeAutoNamed(v2, v3, true);
+         GraphEdge e3 = graph.insertEdgeAutoNamed(v1, v3, true);
+         graph.insertFaceAutoNamed(v1, v2, v3);
+         
+         Transformator transformator = new Transformator(graph);
+         transformator.addEdge(graph, v3, e1);
+         
+         assertFalse(graph.getEdges().contains(e1));
+         assertTrue(graph.getEdges().contains(e2));
+         assertTrue(graph.getEdges().contains(e3));
+         assertEquals(5 + 6, graph.getEdgesNum());
+    }
 }
