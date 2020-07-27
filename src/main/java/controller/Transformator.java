@@ -26,8 +26,7 @@ public class Transformator implements ITransformator{
 		FaceNode face = findFaceToBreak(graph);
 		while(face != null) {
 			graph = breakFace(graph, face);
-			// to uncomment when deleting edges will be fixed, otherwise it seems that addNewFaces works wrong
-			//graph = addNewFaces(graph);
+			graph = addNewFaces(graph);
 			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}

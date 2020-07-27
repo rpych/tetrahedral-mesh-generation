@@ -1,6 +1,9 @@
 package controller;
 
 import model.*;
+
+import java.util.Collection;
+
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -19,12 +22,27 @@ public class TransformatorForTests implements ITransformator {
         FaceNode face = findFaceToBreak(graph);
         while(face != null) {
             graph = breakFace(graph, face);
+			graph = addNewFaces(graph);
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph);
         }
         return graph;
     }
 
+    private ModelGraph addNewFaces(ModelGraph graph) {
+		Collection<GraphEdge> ebv = graph.getEdgesBetweenVertices();
+		for(GraphEdge edge : ebv) {
+			Pair<Vertex, Vertex> edgeVertices = edge.getVertices();
+			Collection<Vertex> cv = graph.getCommonVertices(edgeVertices.getValue0(), edgeVertices.getValue1());
+			for(Vertex v : cv) {
+				if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
+					graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v); 
+				}
+			}
+		}
+		return graph;
+	}
+    
     private FaceNode findFaceToBreak(ModelGraph graph) {
         for(FaceNode face : graph.getFaces()) {
             if(face.isR()) {
