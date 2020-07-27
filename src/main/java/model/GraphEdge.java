@@ -33,6 +33,11 @@ public class GraphEdge extends AbstractEdge {
 		return Coordinates.middlePoint(n0.getCoordinates(), n1.getCoordinates());
     }
 
+    public boolean isBetweenVertices(){
+    	return (edgeNodes.getValue0() instanceof Vertex) &&
+    			(edgeNodes.getValue1() instanceof Vertex);
+    }
+    
     public static class GraphEdgeBuilder {
 
         private final Pair<GraphNode, GraphNode> edgeNodes;
