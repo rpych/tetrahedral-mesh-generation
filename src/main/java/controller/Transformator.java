@@ -26,7 +26,8 @@ public class Transformator implements ITransformator{
 		FaceNode face = findFaceToBreak(graph);
 		while(face != null) {
 			graph = breakFace(graph, face);
-			graph = addNewFaces(graph);
+			// to uncomment when deleting edges will be fixed, otherwise it seems that addNewFaces works wrong
+			//graph = addNewFaces(graph);
 			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}
@@ -34,14 +35,16 @@ public class Transformator implements ITransformator{
 	}
 	
 	private ModelGraph addNewFaces(ModelGraph graph) {
-//		Collection<GraphEdge> edges = graph.getEdges();
-//		for(GraphEdge edge : edges) {
-////			System.out.println(edge.getId());
-//			if(edge.getId().startsWith("E")) {
-////				System.out.println(edge.getId());
-//				Pair<Vertex, Vertex> nodes = edge.getEdgeNodes();
-//			}
-//		}
+		Collection<GraphEdge> ebv = graph.getEdgesBetweenVertices();
+		for(GraphEdge edge : ebv) {
+			Pair<Vertex, Vertex> edgeVertices = edge.getVertices();
+			Collection<Vertex> cv = graph.getCommonVertices(edgeVertices.getValue0(), edgeVertices.getValue1());
+			for(Vertex v : cv) {
+				if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
+					graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v); 
+				}
+			}
+		}
 		return graph;
 	}
 	

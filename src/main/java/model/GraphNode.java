@@ -1,8 +1,13 @@
 package model;
 
 import common.ElementAttributes;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.graphstream.graph.implementations.AbstractGraph;
 import org.graphstream.graph.implementations.SingleNode;
+import org.javatuples.Pair;
 
 public abstract class GraphNode extends SingleNode {
 
@@ -40,4 +45,19 @@ public abstract class GraphNode extends SingleNode {
     public Coordinates getCoordinates(){
         return  coordinates;
     }
+    
+
+	public Collection<GraphNode> getAdjacentNodes(ModelGraph graph){
+		Collection<GraphNode> nodes = new ArrayList<GraphNode>();
+		Collection<GraphEdge> edges = graph.getEdges(this);
+		for(GraphEdge edge : edges) {
+			Pair<GraphNode, GraphNode> edgeNodes = edge.getEdgeNodes();
+			if(this != edgeNodes.getValue0()) {
+				nodes.add(edgeNodes.getValue0());
+			} else {
+				nodes.add(edgeNodes.getValue1());
+			}
+		}
+		return nodes;
+	}
 }

@@ -38,6 +38,13 @@ public class GraphEdge extends AbstractEdge {
     			(edgeNodes.getValue1() instanceof Vertex);
     }
     
+    public Pair<Vertex, Vertex> getVertices(){
+    	if(this.isBetweenVertices()) {
+    		return new Pair<Vertex, Vertex>((Vertex)edgeNodes.getValue0(), (Vertex)edgeNodes.getValue1());
+    	}
+    	throw new IllegalArgumentException("Some GraphNode of edge is not a Vertex!");
+    }
+    
     public static class GraphEdgeBuilder {
 
         private final Pair<GraphNode, GraphNode> edgeNodes;

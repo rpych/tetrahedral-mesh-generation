@@ -265,6 +265,17 @@ public class ModelGraph extends MultiGraph {
     public Collection<GraphEdge> getEdges() {
         return edges.values();
     }
+    
+    public Collection<GraphEdge> getEdges(GraphNode node) {
+        Collection<GraphEdge> adjacentEdges = new ArrayList<GraphEdge>();
+    	for(GraphEdge edge : edges.values()) {
+        	if(node == edge.getEdgeNodes().getValue0() ||
+        	   node == edge.getEdgeNodes().getValue1()) {
+        		adjacentEdges.add(edge);
+        	}
+        }
+    	return adjacentEdges;
+    }
 
     private boolean isVertexBetween(Vertex v, Vertex beginning, Vertex end) {
         double epsilon = .001;
@@ -317,5 +328,45 @@ public class ModelGraph extends MultiGraph {
     	return this.isEdgeBetween(triangle.getValue0(), triangle.getValue1()) &&
     			this.isEdgeBetween(triangle.getValue0(), triangle.getValue2()) &&
     			this.isEdgeBetween(triangle.getValue1(), triangle.getValue2());
+    }
+    
+    public Collection<GraphEdge> getEdgesBetweenVertices(){
+    	Collection<GraphEdge> ebv = new ArrayList<GraphEdge>();
+    	Collection<GraphEdge> edges = this.getEdges();
+    	for(GraphEdge edge : edges) {
+    		if(edge.isBetweenVertices()) {
+    			ebv.add(edge);
+    		}
+    	}
+    	return ebv;
+    }
+    
+    public Collection<Vertex> getCommonVertices(Vertex v1, Vertex v2){
+    	Collection<Vertex> cv = new ArrayList<Vertex>();
+    	Collection<GraphNode> nodes = v1.getAdjacentNodes(this);
+    	for(GraphNode node : nodes) {
+    		if(node instanceof Vertex && node.hasEdgeBetween(v2)) {
+    			cv.add((Vertex)node);
+    		}
+    	}
+    	return cv;
+    }
+    
+    public boolean hasFaceNode(Vertex v1, Vertex v2, Vertex v3) {
+		Set<Vertex> s = new HashSet<Vertex>();
+		s.add(v1);
+		s.add(v2);
+		s.add(v3);
+    	for(FaceNode f : faces.values()) {
+    		Triplet<Vertex, Vertex, Vertex> traingle = f.getTriangle();
+    		Set<Vertex> stmp = new HashSet<Vertex>();
+    		stmp.add(traingle.getValue0());
+    		stmp.add(traingle.getValue1());
+    		stmp.add(traingle.getValue2());
+    		if(s.equals(stmp)) {
+    			return true;
+    		}
+    	}
+    	return false;
     }
 }
