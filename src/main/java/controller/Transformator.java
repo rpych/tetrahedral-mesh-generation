@@ -121,15 +121,33 @@ public class Transformator implements ITransformator{
 		if(e01len > e02len && e01len > e12len) {
 			Coordinates coordinates = e01.getMiddlePointCoordinates();
 			String id = graph.buildVertexName(coordinates);
+			if(!wasEdge01)
+				graph.deleteEdge(v0, v1);
+			if(!wasEdge02)
+				graph.deleteEdge(v0, v2);
+			if(!wasEdge12)
+				graph.deleteEdge(v1, v2);
 			return new Pair<Vertex, Vertex>(v2, graph.getVertexNonOptional(id));
 		}
 		if(e02len > e12len) {
 			Coordinates coordinates = e02.getMiddlePointCoordinates();
 			String id = graph.buildVertexName(coordinates);
+			if(!wasEdge01)
+				graph.deleteEdge(v0, v1);
+			if(!wasEdge02)
+				graph.deleteEdge(v0, v2);
+			if(!wasEdge12)
+				graph.deleteEdge(v1, v2);
 			return new Pair<Vertex, Vertex>(v1, graph.getVertexNonOptional(id));
 		}
 		Coordinates coordinates = e12.getMiddlePointCoordinates();
 		String id = graph.buildVertexName(coordinates);
+		if(!wasEdge01)
+			graph.deleteEdge(v0, v1);
+		if(!wasEdge02)
+			graph.deleteEdge(v0, v2);
+		if(!wasEdge12)
+			graph.deleteEdge(v1, v2);
 		return new Pair<Vertex, Vertex>(v0, graph.getVertexNonOptional(id));
 	}
 	
