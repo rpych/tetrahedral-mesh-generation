@@ -3,6 +3,9 @@ package model;
 import org.graphstream.graph.implementations.AbstractGraph;
 import org.javatuples.Triplet;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class FaceNode extends GraphNode {
 
     private static final String FACE_SYMBOL = "F";
@@ -53,4 +56,34 @@ public class FaceNode extends GraphNode {
     private static double getFaceZCoordinate(Vertex v1, Vertex v2, Vertex v3) {
         return (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d;
     }
+
+    /*if faces are different but have common edge then set of their vertices has size of 4*/
+    public boolean isFaceCongruent(FaceNode face){
+        Set<Vertex> commonVertices = new HashSet<>();
+        Triplet<Vertex, Vertex, Vertex> faceTriangle = face.getTriangleVertices();
+        commonVertices.add(faceTriangle.getValue0());
+        commonVertices.add(faceTriangle.getValue1());
+        commonVertices.add(faceTriangle.getValue2());
+        commonVertices.add(triangle.getValue0());
+        commonVertices.add(triangle.getValue1());
+        commonVertices.add(triangle.getValue2());
+
+        return commonVertices.size() == 4;
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FaceNode f = (FaceNode) o;
+        Vertex fv0 = f.getTriangle().getValue0(), fv1 = f.getTriangle().getValue1(), fv2 = f.getTriangle().getValue2();
+        Vertex thisv0 = triangle.getValue0(), thisv1 = triangle.getValue1(), thisv2 = triangle.getValue2();
+        return (fv0.getCoordinates().equals(thisv0.getCoordinates()) ||  fv0.getCoordinates().equals(thisv1.getCoordinates()) ||
+                fv0.getCoordinates().equals(thisv2.getCoordinates())) && (fv1.getCoordinates().equals(thisv0.getCoordinates()) ||
+                fv1.getCoordinates().equals(thisv1.getCoordinates()) || fv1.getCoordinates().equals(thisv2.getCoordinates())) &&
+                (fv2.getCoordinates().equals(thisv0.getCoordinates()) ||  fv2.getCoordinates().equals(thisv1.getCoordinates()) ||
+                fv2.getCoordinates().equals(thisv2.getCoordinates()));
+    }
+
+
 }

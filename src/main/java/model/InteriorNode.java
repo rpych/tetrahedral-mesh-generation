@@ -17,6 +17,8 @@ public class InteriorNode extends GraphNode{
         quartet = new Quartet<>(v1, v2, v3, v4);
     }
 
+    Quartet<Vertex, Vertex, Vertex, Vertex> getQuartet() { return  quartet; }
+
     private static Coordinates getInteriorNodePosition(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         return new Coordinates(getInteriorNodeXCoordinate(v1, v2, v3, v4), getInteriorNodeYCoordinate(v1, v2, v3, v4), getInteriorNodeZCoordinate(v1, v2, v3, v4));
     }
