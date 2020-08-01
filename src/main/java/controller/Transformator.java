@@ -30,6 +30,7 @@ public class Transformator implements ITransformator{
 			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}
+		createNewInteriorNodes();
 		return graph;
 	}
 	
@@ -259,5 +260,13 @@ public class Transformator implements ITransformator{
 			return false;
 		}
 		return true;
+	}
+
+	//InteriorNode part
+
+	public ModelGraph createNewInteriorNodes(){
+		String initialIntNodeName = graph.getInteriorNodes().iterator().next().getId(); //first and only entry in Map so far
+		graph.removeInteriorNode(initialIntNodeName);
+		return graph.createInteriorNodesForNewlyFoundSubGraphs();
 	}
 }
