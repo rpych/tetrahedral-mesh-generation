@@ -7,6 +7,7 @@ import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
+import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
 import java.lang.reflect.Type;
@@ -21,6 +22,8 @@ public class ModelGraph extends MultiGraph {
 
     private Map<String, GraphEdge> edges = new HashMap<>();
 
+    private Map<String, InteriorNode> interiorNodes = new HashMap<>();
+
     public ModelGraph(String id) {
         super(id);
     }
@@ -29,6 +32,7 @@ public class ModelGraph extends MultiGraph {
         super(graph.id + 1);
         graph.vertices.values().forEach(this::insertVertex);
         graph.faces.values().forEach(this::insertFace);
+        graph.interiorNodes.values().forEach(this::insertInteriorNode);
         graph.edges.values().forEach(this::insertEdge);
     }
 
@@ -369,4 +373,45 @@ public class ModelGraph extends MultiGraph {
     	}
     	return false;
     }
+
+    //InteriorNode part
+
+    public InteriorNode insertInteriorNode(InteriorNode interiorNode) {
+        Node node = this.addNode(interiorNode.getId());
+        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
+        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
+        interiorNodes.put(interiorNode.getId(), interiorNode);
+        return interiorNode;
+    }
+
+    public InteriorNode insertInteriorNodeAutoNamed(GraphNode n1, GraphNode n2, GraphNode n3, GraphNode n4){
+        String nodeName = InteriorNode.INTERIOR_SYMBOL + n1.getId() + "_" + n2.getId() + "_" + n3.getId() + "_" + n4.getId();
+        //Quartet<Vertex, Vertex, Vertex, Vertex> quartet = new Quartet<>( (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4 );
+        return insertInteriorNode(nodeName, (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4, null);
+    }
+
+    public InteriorNode insertInteriorNode(String interiorNodeName, Vertex v1, Vertex v2, Vertex v3, Vertex v4, String uiStyle){
+        InteriorNode interiorNode = new InteriorNode(this, interiorNodeName, v1, v2, v3, v4);
+        Node node = this.addNode(interiorNode.getId());
+        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
+        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
+        interiorNodes.put(interiorNodeName, interiorNode);
+        insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: blue;");
+        insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: blue;");
+        insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: blue;");
+        insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: blue;");
+        return interiorNode;
+    }
+
+    public void removeInteriorNode(String id) {
+        List<String> edgesToRemove = edges.values().stream()
+                .filter(graphEdge -> graphEdge.getEdgeNodes().contains(interiorNodes.get(id)))
+                .map(GraphEdge::getId)
+                .collect(Collectors.toList());
+        edgesToRemove.forEach(this::deleteEdge);
+        interiorNodes.remove(id);
+        this.removeNode(id);
+    }
+
+
 }
