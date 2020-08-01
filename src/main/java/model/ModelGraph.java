@@ -376,6 +376,8 @@ public class ModelGraph extends MultiGraph {
 
     //InteriorNode part
 
+    public Collection<InteriorNode> getInteriorNodes() { return interiorNodes.values(); }
+
     public InteriorNode insertInteriorNode(InteriorNode interiorNode) {
         Node node = this.addNode(interiorNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
@@ -414,7 +416,82 @@ public class ModelGraph extends MultiGraph {
         this.removeNode(id);
     }
 
+    private boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
+        Quartet<Vertex, Vertex, Vertex, Vertex> quartetNode = intNode.getQuartet();
+        return (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
+                isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue3()) ) &&
+                (isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue1()) ||
+                isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue3()) ) &&
+                (isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue1()) ||
+                isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue3()) ) &&
+                (isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue1()) ||
+                isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue3()) );
+    }
 
+    //main method for InteriorNode
+    public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
+        for(FaceNode face: this.getFaces() ){
+            Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph = this.findVerticesWhichFormsCandSubGraph(face);
 
+            if( !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
+                insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+            }
+        }
+        return this;
+    }
+
+    private boolean checkVerticesWithinSubgraphAlreadyProcessed(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph){
+        for(Map.Entry<String, InteriorNode> intNode: this.interiorNodes.entrySet()){
+            if(checkSameVerticesInInteriorNode(candSubGraph, intNode.getValue())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Quartet<Vertex, Vertex, Vertex, Vertex> findVerticesWhichFormsCandSubGraph(FaceNode face){
+       Map<String, Integer> candSubGraphTopVertices = new HashMap<>();
+       Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+       Vertex v0 = triangle.getValue0(), v1 = triangle.getValue1(), v2 = triangle.getValue2();
+       for(FaceNode f: this.getFaces() ){
+           if( !f.equals(face) && f.isFaceCongruent(face) ){
+               processFaceToFindSubgraphTopVertex(f, triangle, candSubGraphTopVertices);
+           }
+       }
+        Optional<Vertex> topVertex = getSubgraphTopVertex(triangle, candSubGraphTopVertices);
+        Quartet<Vertex, Vertex, Vertex, Vertex> subGraphVertices = null;
+       if(topVertex.isPresent()){
+           subGraphVertices = new Quartet<>(v0, v1, v2, topVertex.get());
+       }
+       return subGraphVertices;
+    }
+
+    private void processFaceToFindSubgraphTopVertex(FaceNode face, Triplet<Vertex, Vertex, Vertex> triangleBase, Map<String, Integer> topVertices){
+        Triplet<Vertex, Vertex, Vertex> congruentTriangle = face.getTriangle();
+        Vertex v0 = congruentTriangle.getValue0(), v1 = congruentTriangle.getValue1(), v2 = congruentTriangle.getValue2();
+        if( v0 != triangleBase.getValue0() && v0 != triangleBase.getValue1() && v0 != triangleBase.getValue2() ){
+            Integer counter = topVertices.getOrDefault(v0.getId(), 0);
+            topVertices.put(v0.getId(), ++counter);
+        }
+        else if( v1 != triangleBase.getValue0() && v1 != triangleBase.getValue1() && v1 != triangleBase.getValue2() ){
+            Integer counter = topVertices.getOrDefault(v1.getId(), 0);
+            topVertices.put(v1.getId(), ++counter);
+        }
+        else if( v2 != triangleBase.getValue0() && v2 != triangleBase.getValue1() && v2 != triangleBase.getValue2() ){
+            Integer counter = topVertices.getOrDefault(v2.getId(), 0);
+            topVertices.put(v2.getId(), ++counter);
+        }
+    }
+
+    public Optional<Vertex> getSubgraphTopVertex(Triplet<Vertex, Vertex, Vertex> triangle, Map<String, Integer> candSubGraphTopVertices){
+        Vertex topVertex = null;
+        for(Map.Entry<String, Integer> candVertex: candSubGraphTopVertices.entrySet()){
+            if(candVertex.getValue() == 3) { //common vertex for all 3 faces congruent with face formed by triangle parameter
+                topVertex = vertices.get(candVertex.getKey());
+                break;
+            }
+        }
+        return Optional.ofNullable(topVertex);
+    }
 
 }
