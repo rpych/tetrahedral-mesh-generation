@@ -396,10 +396,11 @@ public class ModelGraph extends MultiGraph {
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
         interiorNodes.put(interiorNodeName, interiorNode);
-        insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: blue;");
-        insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: blue;");
-        insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: blue;");
-        insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: blue;");
+        insertEdgeAutoNamed(interiorNode, v1, false);
+        insertEdgeAutoNamed(interiorNode, v2, false);
+        insertEdgeAutoNamed(interiorNode, v3, false);
+        insertEdgeAutoNamed(interiorNode, v4, false);
+
         return interiorNode;
     }
 
@@ -412,6 +413,8 @@ public class ModelGraph extends MultiGraph {
         interiorNodes.remove(id);
         this.removeNode(id);
     }
+
+
 
 
 }

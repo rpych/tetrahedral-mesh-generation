@@ -48,6 +48,8 @@ public class Main {
         graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
 
+        graph.insertInteriorNodeAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2), nodes.get(3));
+
         return graph;
     }
     
@@ -71,6 +73,8 @@ public class Main {
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
         graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);;
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
+
+        graph.insertInteriorNodeAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2), nodes.get(3));
 
         return graph;
     }
