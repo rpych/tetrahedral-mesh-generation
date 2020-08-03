@@ -5,10 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import model.FaceNode;
-import model.GraphEdge;
-import model.ModelGraph;
-import model.Vertex;
+import model.*;
 
 public class MatlabVisualizer{
     private ModelGraph graph;
@@ -32,6 +29,8 @@ public class MatlabVisualizer{
     		writePlottingEdges(fileWriter, "red");
     		writeFaceEdges(fileWriter);
     		writePlottingEdges(fileWriter, "grey");
+			writeInteriorEdges(fileWriter);
+			writePlottingEdges(fileWriter, "green");
     		endFunctionDefinition(fileWriter);
     		fileWriter.close();
     	}catch(IOException e) {
@@ -60,6 +59,10 @@ public class MatlabVisualizer{
     		fileWriter.write("\t" + n.getXCoordinate() + " " + n.getYCoordinate() + " " + n.getZCoordinate() + "; ...\n");
     		this.nodesIDs.put(n.getId(), idx++);
     	}
+		for(InteriorNode in : this.graph.getInteriorNodes()) {
+			fileWriter.write("\t" + in.getXCoordinate() + " " + in.getYCoordinate() + " " + in.getZCoordinate() + "; ...\n");
+			this.nodesIDs.put(in.getId(), idx++);
+		}
     	fileWriter.write("];\n\n");
     }
     
@@ -126,11 +129,43 @@ public class MatlabVisualizer{
     	fileWriter.write("];\n");
     	fileWriter.write("n = nan(1," + faceEdgesNumber + ");\n\n");
     }
+
+	private void writeInteriorEdges(FileWriter fileWriter) throws IOException {
+		writeInteriorEdgesSources(fileWriter);
+		writeInteriorEdgesEndings(fileWriter);
+	}
+
+	private void writeInteriorEdgesSources(FileWriter fileWriter) throws IOException {
+		fileWriter.write("s = [");
+		for(GraphEdge edge : this.graph.getEdges()) {
+			if(edge.getNode0().getId().startsWith("I") || edge.getNode1().getId().startsWith("I")) {
+				fileWriter.write(this.nodesIDs.get(edge.getNode0().getId()).toString() + " ");
+			}
+		}
+		fileWriter.write("];\n");
+	}
+
+	private void writeInteriorEdgesEndings(FileWriter fileWriter) throws IOException {
+		fileWriter.write("e = [");
+		int interiorEdgesNumber = 0;
+		for(GraphEdge edge : this.graph.getEdges()) {
+			if(edge.getNode0().getId().startsWith("I") || edge.getNode1().getId().startsWith("I")) {
+				fileWriter.write(this.nodesIDs.get(edge.getNode1().getId()).toString() + " ");
+				interiorEdgesNumber++;
+			}
+		}
+		fileWriter.write("];\n");
+		fileWriter.write("n = nan(1," + interiorEdgesNumber + ");\n\n");
+	}
     
     private static void writePlottingEdges(FileWriter fileWriter, String color) throws IOException{
     	if(color.equals("red")) {
         	fileWriter.write("color = [1 0 0];\n");
-    	}else {
+    	}
+    	else if(color.equals("green")){
+			fileWriter.write("color = [0 1 0];\n");
+		}
+    	else {
     		fileWriter.write("color = [0.25 0.25 0.25];\n");
     	}
     	fileWriter.write("lx = [nodes(s',1)'; nodes(e',1)'; n];\n");
