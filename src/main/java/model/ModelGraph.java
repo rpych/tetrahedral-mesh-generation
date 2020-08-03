@@ -388,7 +388,6 @@ public class ModelGraph extends MultiGraph {
 
     public InteriorNode insertInteriorNodeAutoNamed(GraphNode n1, GraphNode n2, GraphNode n3, GraphNode n4){
         String nodeName = InteriorNode.INTERIOR_SYMBOL + n1.getId() + "_" + n2.getId() + "_" + n3.getId() + "_" + n4.getId();
-        //Quartet<Vertex, Vertex, Vertex, Vertex> quartet = new Quartet<>( (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4 );
         return insertInteriorNode(nodeName, (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4, null);
     }
 
@@ -398,10 +397,11 @@ public class ModelGraph extends MultiGraph {
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
         interiorNodes.put(interiorNodeName, interiorNode);
-        insertEdgeAutoNamed(interiorNode, v1, false);
-        insertEdgeAutoNamed(interiorNode, v2, false);
-        insertEdgeAutoNamed(interiorNode, v3, false);
-        insertEdgeAutoNamed(interiorNode, v4, false);
+
+        insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: orange;");
+        insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: orange;");
+        insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: orange;");
+        insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: orange;");
 
         return interiorNode;
     }

@@ -94,11 +94,6 @@ class GraphTransformatorTest {
     }
 
     @Test
-    void simpletest(){
-       assertEquals(1, 1);
-    }
-
-    @Test
     void checkEqualNumOfVertexesInBothGraphs(){
         ModelGraph transformedExpGraph = makeGraphTransformation(this.transformatorForTests);
 
