@@ -30,7 +30,7 @@ public class Transformator implements ITransformator{
 			graph = markFacesToBreak(graph);
 			face = findFaceToBreak(graph);
 		}
-		createNewInteriorNodes();
+		graph = createNewInteriorNodes();
 		return graph;
 	}
 	

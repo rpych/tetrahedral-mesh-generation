@@ -29,16 +29,16 @@ class GraphTransformatorTest {
     }
 
     private void prepareInputGraph(){
-        this.inputGraph = generateTetrahedra("InGraph");
+        this.inputGraph = generateTetrahedra("InGraph", true);
         this.transformator = new Transformator(this.inputGraph);
     }
 
     private void prepareExpectedGraph(){
-        this.expectedGraph = generateTetrahedra("ExGraph");
+        this.expectedGraph = generateTetrahedra("ExpGraph", false);
         this.transformatorForTests = new TransformatorForTests(this.expectedGraph);
     }
 
-    private static ModelGraph generateTetrahedra(String name) {
+    private static ModelGraph generateTetrahedra(String name, Boolean containsInteriorNodes) {
         ModelGraph graph = new ModelGraph(name);
 
         List<Vertex> nodes = new ArrayList<>();
@@ -58,6 +58,9 @@ class GraphTransformatorTest {
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
         graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
+
+        if(containsInteriorNodes)
+            graph.insertInteriorNodeAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2), nodes.get(3));
 
         return graph;
     }
@@ -110,7 +113,8 @@ class GraphTransformatorTest {
 
         ModelGraph transformedInputGraph = makeGraphTransformation(this.transformator);
 
-        assertEquals(transformedExpGraph.getEdgesNum(), transformedInputGraph.getEdgesNum());
+        int interiorEdgesCount = 4 * transformedInputGraph.getInteriorNodes().size(); // single InteriorNode has 4 connections to other vertices
+        assertEquals(transformedExpGraph.getEdgesNum() + interiorEdgesCount, transformedInputGraph.getEdgesNum());
     }
 
     @Test
