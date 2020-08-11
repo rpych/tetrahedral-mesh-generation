@@ -58,6 +58,7 @@ public class Transformator implements ITransformator{
 	}
 	
 	// to correct
+	// TODO: when two longest edges in face are equal face should be brought to edge brought before
 	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
 		Pair<Vertex, Vertex> vertexes = findLongestEdgeOfFace(graph, face);
 		if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
@@ -118,7 +119,7 @@ public class Transformator implements ITransformator{
 		e02len = e02.getLength();
 		e12 = graph.getEdgeNotOptional(v1, v2);
 		e12len = e12.getLength();
-		if(e01len > e02len && e01len > e12len) {
+		if(e01len >= e02len && e01len >= e12len) {
 			Coordinates coordinates = e01.getMiddlePointCoordinates();
 			String id = graph.buildVertexName(coordinates);
 			if(!wasEdge01)
@@ -129,7 +130,7 @@ public class Transformator implements ITransformator{
 				graph.deleteEdge(v1, v2);
 			return new Pair<Vertex, Vertex>(v2, graph.getVertexNonOptional(id));
 		}
-		if(e02len > e12len) {
+		if(e02len >= e12len) {
 			Coordinates coordinates = e02.getMiddlePointCoordinates();
 			String id = graph.buildVertexName(coordinates);
 			if(!wasEdge01)
