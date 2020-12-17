@@ -24,6 +24,8 @@ public class ModelGraph extends MultiGraph {
 
     private Map<String, InteriorNode> interiorNodes = new HashMap<>();
 
+    private Map<String, Coordinates> hangingNodes = new HashMap<>();
+
     public ModelGraph(String id) {
         super(id);
     }
@@ -66,7 +68,28 @@ public class ModelGraph extends MultiGraph {
     
     public Vertex insertVertexAutoNamed(Coordinates coordinates) {
 		String vertexName = buildVertexName(coordinates);
+		Optional<Vertex> optVertex = getVertex(vertexName);
+		if(optVertex.isPresent())
+		    return optVertex.get();
 		return insertVertex(vertexName, coordinates);
+    }
+
+    public Vertex insertVertexAutoNamedOptional(GraphEdge edge, Optional<Coordinates> coordinates) {
+        Coordinates breakPointCoords = null;
+        if(!coordinates.isPresent()){
+            breakPointCoords = hangingNodes.get(edge.getId());
+            //hangingNodes.remove(edge.getId());
+        }
+        else{
+            breakPointCoords = coordinates.get();
+            hangingNodes.put(edge.getId(), breakPointCoords);
+        }
+        //System.out.println("RPY:: breakPointCoords = "+ breakPointCoords.toString());
+        String vertexName = buildVertexName(breakPointCoords);
+        Optional<Vertex> optVertex = getVertex(vertexName);
+        if(optVertex.isPresent())
+            return optVertex.get();
+        return insertVertex(vertexName, breakPointCoords);
     }
 
     public Optional<Vertex> removeVertex(String id) {
@@ -139,8 +162,16 @@ public class ModelGraph extends MultiGraph {
         return insertEdge(id, n1, n2, border, null);
     }
     
-    public GraphEdge insertEdgeAutoNamed(GraphNode n1, GraphNode n2, boolean border) {
+    public GraphEdge insertEdgeAutoNamedOrGet(GraphNode n1, GraphNode n2, boolean border) {
     	String edgeName = "E" + n1.getId() + "to" + n2.getId();
+        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2);//getEdge((Vertex)n1, (Vertex)n2);
+        if(optEdge.isPresent())
+            return optEdge.get();
+        return insertEdge(edgeName, n1, n2, border, null);
+    }
+
+    public GraphEdge insertEdgeAutoNamed(GraphNode n1, GraphNode n2, boolean border) {
+        String edgeName = "E" + n1.getId() + "to" + n2.getId();
         return insertEdge(edgeName, n1, n2, border, null);
     }
 
@@ -251,6 +282,7 @@ public class ModelGraph extends MultiGraph {
     }
 
     public Optional<GraphEdge> getEdge(Vertex v1, Vertex v2) {
+        //System.out.println("RPY:: NAME = "+ v1.getEdgeBetween(v2).getId());
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
     
