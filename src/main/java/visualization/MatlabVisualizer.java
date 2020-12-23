@@ -27,8 +27,8 @@ public class MatlabVisualizer{
     		writePlottingNodes(fileWriter);
     		writeNormalEdges(fileWriter);
     		writePlottingEdges(fileWriter, "red");
-    		writeFaceEdges(fileWriter);
-    		writePlottingEdges(fileWriter, "grey");
+    		//writeFaceEdges(fileWriter);
+    		//writePlottingEdges(fileWriter, "grey");
 			writeInteriorEdges(fileWriter);
 			writePlottingEdges(fileWriter, "green");
     		endFunctionDefinition(fileWriter);

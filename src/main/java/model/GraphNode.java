@@ -1,13 +1,12 @@
 package model;
 
 import common.ElementAttributes;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.graphstream.graph.implementations.AbstractGraph;
 import org.graphstream.graph.implementations.SingleNode;
 import org.javatuples.Pair;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public abstract class GraphNode extends SingleNode {
 

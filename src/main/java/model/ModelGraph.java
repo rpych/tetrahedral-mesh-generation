@@ -7,6 +7,7 @@ import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
+import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
@@ -25,6 +26,8 @@ public class ModelGraph extends MultiGraph {
     private Map<String, InteriorNode> interiorNodes = new HashMap<>();
 
     private Map<String, Coordinates> hangingNodes = new HashMap<>();
+
+    private Map<String, GraphEdge> allSeenEdges = new HashMap<>();
 
     public ModelGraph(String id) {
         super(id);
@@ -164,7 +167,7 @@ public class ModelGraph extends MultiGraph {
     
     public GraphEdge insertEdgeAutoNamedOrGet(GraphNode n1, GraphNode n2, boolean border) {
     	String edgeName = "E" + n1.getId() + "to" + n2.getId();
-        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2);//getEdge((Vertex)n1, (Vertex)n2);
+        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2);
         if(optEdge.isPresent())
             return optEdge.get();
         return insertEdge(edgeName, n1, n2, border, null);
@@ -181,6 +184,10 @@ public class ModelGraph extends MultiGraph {
         if (uiStyle != null) {
             edge.addAttribute("ui.style", uiStyle);
         }
+        if(n1 instanceof Vertex && n2 instanceof Vertex){
+            allSeenEdges.put(graphEdge.getId(), graphEdge);
+            //System.out.println("RPY::allSeenEdges = " + allSeenEdges);
+        }
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
     }
@@ -189,6 +196,23 @@ public class ModelGraph extends MultiGraph {
         Edge edge = this.addEdge(graphEdge.getId(), graphEdge.getNode0().getId(), graphEdge.getNode1().getId());
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
+    }
+
+    public Pair<Vertex, Vertex> getMissingVertices(GraphEdge e1, GraphEdge e2, Vertex common){
+        Vertex v1 = (e1.getEdgeNodes().getValue0().getId().equals(common.getId()) ) ? (Vertex)e1.getEdgeNodes().getValue1() : (Vertex)e1.getEdgeNodes().getValue0();
+        Vertex v2 = (e2.getEdgeNodes().getValue0().getId().equals(common.getId()) ) ? (Vertex)e2.getEdgeNodes().getValue1() : (Vertex)e2.getEdgeNodes().getValue0();
+        return new Pair<>(v1, v2);
+    }
+
+    public boolean wereEdgeVerticesWheneverAdjacent(GraphEdge e1, GraphEdge e2, Vertex common){
+        Vertex v1 = (e1.getEdgeNodes().getValue0().getId().equals(common.getId()) ) ? (Vertex)e1.getEdgeNodes().getValue1() : (Vertex)e1.getEdgeNodes().getValue0();
+        Vertex v2 = (e2.getEdgeNodes().getValue0().getId().equals(common.getId()) ) ? (Vertex)e2.getEdgeNodes().getValue1() : (Vertex)e2.getEdgeNodes().getValue0();
+        String edgeName1 = "E" + v1.getId() + "to" + v2.getId();
+        String edgeName2 = "E" + v2.getId() + "to" + v1.getId();
+        if(allSeenEdges.containsKey(edgeName1) || allSeenEdges.containsKey(edgeName2)){
+            return true;
+        }
+        return false;
     }
 
     public void deleteEdge(GraphNode n1, GraphNode n2) {
@@ -376,6 +400,61 @@ public class ModelGraph extends MultiGraph {
     	}
     	return ebv;
     }
+
+    public Collection<FaceNode> getFacesPartiallyLaidOnLayerBorder(double upperLayerBoundary){
+        Collection<FaceNode> folb = new LinkedList<FaceNode>();
+        for(FaceNode face: getFaces()){
+            Triplet<Vertex, Vertex, Vertex> faceVertices = face.getTriangle();
+            Optional<Pair<Vertex, Vertex>> borderVertices = getTwoVerticesOnLayerBorder(faceVertices, upperLayerBoundary);
+            if(borderVertices.isPresent()){
+                folb.add(face);
+            }
+        }
+        return folb;
+    }
+
+    public Optional<Pair<Vertex, Vertex>> getTwoVerticesOnLayerBorder(Triplet<Vertex, Vertex, Vertex> faceVertices, double upperLayerBoundary){
+        Vertex v1 = faceVertices.getValue0(), v2 = faceVertices.getValue1(), v3 = faceVertices.getValue2();
+        double eps = 0.00001;
+        if(Math.abs(v1.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v2.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v3.getZCoordinate()-upperLayerBoundary) >= eps && (v3.getZCoordinate()-upperLayerBoundary > 0) ){
+            return Optional.of(new Pair<>(v1, v2));
+        }
+        else if(Math.abs(v1.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v3.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v2.getZCoordinate()-upperLayerBoundary) >= eps && (v2.getZCoordinate()-upperLayerBoundary > 0) ){
+            return Optional.of(new Pair<>(v1, v3));
+        }
+        else if(Math.abs(v2.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v3.getZCoordinate()-upperLayerBoundary) < eps
+                && Math.abs(v1.getZCoordinate()-upperLayerBoundary) >= eps && (v1.getZCoordinate()-upperLayerBoundary > 0) ){
+            return Optional.of(new Pair<>(v2, v3));
+        }
+        return Optional.empty();
+    }
+
+    public Optional<FaceNode> getNearestCongruentFace(FaceNode face, Collection<FaceNode> facesOnLayersBorder){
+        //Vertex v1 = face.getTriangle().getValue0(), v2 = face.getTriangle().getValue1(), v3 = face.getTriangle().getValue2();
+        double minDistance = 100000;
+        FaceNode nearestFace = null;
+        for(FaceNode faceOnBorder: facesOnLayersBorder){
+            if(!face.equals(faceOnBorder)){
+                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(faceOnBorder);
+                if(! uncommonVertices.isPresent()) continue;
+
+                Vertex uv0 = uncommonVertices.get().getValue0();
+                Vertex uv1 = uncommonVertices.get().getValue1();
+                double distance = Math.pow(uv0.getXCoordinate() - uv1.getXCoordinate(), 2)
+                        + Math.pow(uv0.getYCoordinate() - uv1.getYCoordinate(), 2);
+                if(distance < minDistance){
+                    minDistance = distance;
+                    nearestFace = faceOnBorder;
+                }
+            }
+        }
+        return Optional.ofNullable(nearestFace);
+    }
     
     public Collection<Vertex> getCommonVertices(Vertex v1, Vertex v2){
     	Collection<Vertex> cv = new ArrayList<Vertex>();
@@ -404,6 +483,19 @@ public class ModelGraph extends MultiGraph {
     		}
     	}
     	return false;
+    }
+
+    public boolean verticesFormsEdge(Vertex v1, Vertex v2){
+        return v1.hasEdgeBetween(v2);
+    }
+
+    public void insertLackingFaces(Vertex v1, Vertex v2, Vertex v3, Vertex v4){
+        if(!hasFaceNode(v1, v2, v3)) {
+            insertFaceAutoNamed(v1, v2, v3);
+        }
+        if(!hasFaceNode(v2, v3, v4)){
+            insertFaceAutoNamed(v2, v3, v4);
+        }
     }
 
     //InteriorNode part
