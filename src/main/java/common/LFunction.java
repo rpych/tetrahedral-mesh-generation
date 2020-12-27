@@ -8,21 +8,15 @@ import java.util.*;
 //LayersFunction
 public class LFunction {
 
-    private static double BlueLayerHeight = 1.0f;
-    private static double YellowLayerHeight = 0.60f;
-    private static double OrangeLayerHeight = 0.40f;
-    private static double layersLowerBoundary = 0.0f;
-    public static double layersUpCoords[] = new double[]{YellowLayerHeight, OrangeLayerHeight};
-
     enum LAYER{
         BLUE, YELLOW, ORANGE;
     }
 
     public static LAYER FLayer(Coordinates point){
-        if(point.getZ() <= LFunction.PlaneBlue(point) && point.getZ() >= LFunction.PlaneYellow(point)){
+        if(point.getZ() <= LFunction.PlaneBlue(point) && point.getZ() > LFunction.PlaneYellow(point)){
             return LAYER.BLUE;
         }
-        else if(point.getZ() <= LFunction.PlaneYellow(point) && point.getZ() >= LFunction.PlaneOrange(point)){
+        else if(point.getZ() <= LFunction.PlaneYellow(point) && point.getZ() > LFunction.PlaneOrange(point)){
             return LAYER.YELLOW;
         }
 
@@ -31,13 +25,13 @@ public class LFunction {
 
     public static double F(Coordinates point){
         if(point.getZ() <= LFunction.PlaneBlue(point) && point.getZ() > LFunction.PlaneYellow(point)){
-            return YellowLayerHeight;
+            return 0.7;
         }
         else if(point.getZ() <= LFunction.PlaneYellow(point) && point.getZ() > LFunction.PlaneOrange(point)){
-            return OrangeLayerHeight;
+            return 0.7;
         }
 
-        return  -1.0;
+        return  0.3;//0.0;
     }
 
     public static Optional<Coordinates> getBreakPoint(GraphEdge egdeToBreak, double fValue){
@@ -62,35 +56,22 @@ public class LFunction {
         return Optional.of(new Coordinates(x, y, z));
     }
 
-    public static boolean areDifferentLayers(Coordinates a, Coordinates b){
-        //return l1.ordinal() != l2.ordinal();
-        if( (a.getZ() <= LFunction.PlaneBlue(a)) && (a.getZ() >= LFunction.PlaneYellow(a))
-                && (b.getZ() <= LFunction.PlaneBlue(b)) && (b.getZ() >= LFunction.PlaneYellow(b)) ){
-            return false;
-        }
-        else if( (a.getZ() <= LFunction.PlaneYellow(a)) && (a.getZ() >= LFunction.PlaneOrange(a))
-                && (b.getZ() <= LFunction.PlaneYellow(b)) && (b.getZ() >= LFunction.PlaneOrange(b)) ){
-            return false;
-        } //when using 2 layers below condition is never checked
-        else if((a.getZ() <= LFunction.PlaneOrange(a)) && (a.getZ() >= layersLowerBoundary)
-                && (b.getZ() <= LFunction.PlaneOrange(b)) && (b.getZ() >= layersLowerBoundary)){
-            return false;
-        }
-        return true;
+    public static boolean areDifferentLayers(LAYER l1, LAYER l2){
+        return l1.ordinal() != l2.ordinal();
     }
 
     public static double PlaneBlue(Coordinates point){
-        double z = BlueLayerHeight; // plane equation
+        double z = 1.0f; // plane equation
         return z;
     }
 
     public static double PlaneYellow(Coordinates point){
-        double z = YellowLayerHeight; // plane equation
+        double z = 0.7f; // plane equation
         return z;
     }
 
     public static double PlaneOrange(Coordinates point){
-        double z = OrangeLayerHeight; // plane equation
+        double z = 0.3f; //0.0, plane equation
         return z;
     }
 
