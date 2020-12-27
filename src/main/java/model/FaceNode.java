@@ -1,11 +1,10 @@
 package model;
 
 import org.graphstream.graph.implementations.AbstractGraph;
-import org.javatuples.Pair;
-import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FaceNode extends GraphNode {
 
@@ -72,71 +71,6 @@ public class FaceNode extends GraphNode {
         return commonVertices.size() == 4;
     }
 
-    public boolean faceContainsVertices(Vertex v1, Vertex v2){
-        return ( v1.getId().equals(triangle.getValue0().getId()) || v1.getId().equals(triangle.getValue1().getId()) ||
-                v1.getId().equals(triangle.getValue2().getId()) ) && ( v2.getId().equals(triangle.getValue0().getId()) ||
-                v2.getId().equals(triangle.getValue1().getId()) || v2.getId().equals(triangle.getValue2().getId()) );
-    }
-
-    public Vertex[] getVerticesFromMap(FaceNode face){
-        Vertex v0 = face.getTriangle().getValue0(), v1 = face.getTriangle().getValue1(), v2 = face.getTriangle().getValue2();
-        Map<String, Vertex> commonVertices = new HashMap<>();
-        commonVertices.put(v0.getId(), v0);
-        commonVertices.put(v1.getId(), v1);
-        commonVertices.put(v2.getId(), v2);
-        commonVertices.put(triangle.getValue0().getId(), triangle.getValue0());
-        commonVertices.put(triangle.getValue1().getId(), triangle.getValue1());
-        commonVertices.put(triangle.getValue2().getId(), triangle.getValue2());
-        Vertex[] vertices = new Vertex[4];
-        int i = 0;
-        for(Map.Entry<String, Vertex> vertex: commonVertices.entrySet()){
-            vertices[i++] = vertex.getValue();
-        }
-        return vertices;
-    }
-
-    //method unused for now
-    public Optional<Pair<Vertex, Vertex>> getVerticesFromCongruentEdge(FaceNode face){
-        Vertex v0 = face.getTriangle().getValue0(), v1 = face.getTriangle().getValue1(), v2 = face.getTriangle().getValue2();
-        if(this.isFaceCongruent(face)){
-            if(faceContainsVertices(v0, v1)){
-                return Optional.of(new Pair<>(v0, v1));
-            }
-            else if(faceContainsVertices(v0, v2)){
-                return Optional.of(new Pair<>(v0, v2));
-            }
-            else if(faceContainsVertices(v1, v2)){
-                return Optional.of(new Pair<>(v1, v2));
-            }
-        }
-        return Optional.empty();
-    }
-
-    public Optional<Pair<Vertex, Vertex>> getUncommonVerticesIfCongruent(FaceNode face){
-        if(this.isFaceCongruent(face)){
-            Vertex[] vertices = getVerticesFromMap(face);
-            if(faceContainsVertices(vertices[0], vertices[1])){
-                return Optional.of(new Pair<>(vertices[2], vertices[3]));
-            }
-            else if(faceContainsVertices(vertices[0], vertices[2])){
-                return Optional.of(new Pair<>(vertices[1], vertices[3]));
-            }
-            else if(faceContainsVertices(vertices[0], vertices[3])){
-                return Optional.of(new Pair<>(vertices[1], vertices[2]));
-            }
-            else if(faceContainsVertices(vertices[1], vertices[2])){
-                return Optional.of(new Pair<>(vertices[0], vertices[3]));
-            }
-            else if(faceContainsVertices(vertices[1], vertices[3])){
-                return Optional.of(new Pair<>(vertices[0], vertices[2]));
-            }
-            else if(faceContainsVertices(vertices[2], vertices[3])){
-                return Optional.of(new Pair<>(vertices[0], vertices[1]));
-            }
-        }
-        return Optional.empty();
-    }
-
     @Override
     public boolean equals(Object o){
         if (this == o) return true;
@@ -144,9 +78,11 @@ public class FaceNode extends GraphNode {
         FaceNode f = (FaceNode) o;
         Vertex fv0 = f.getTriangle().getValue0(), fv1 = f.getTriangle().getValue1(), fv2 = f.getTriangle().getValue2();
         Vertex thisv0 = triangle.getValue0(), thisv1 = triangle.getValue1(), thisv2 = triangle.getValue2();
-        return (fv0.getId().equals(thisv0.getId()) || fv0.getId().equals(thisv1.getId()) || fv0.getId().equals(thisv2.getId())) &&
-                (fv1.getId().equals(thisv0.getId()) || fv1.getId().equals(thisv1.getId()) || fv1.getId().equals(thisv2.getId())) &&
-                (fv2.getId().equals(thisv0.getId()) || fv2.getId().equals(thisv1.getId()) || fv2.getId().equals(thisv2.getId()));
+        return (fv0.getCoordinates().equals(thisv0.getCoordinates()) ||  fv0.getCoordinates().equals(thisv1.getCoordinates()) ||
+                fv0.getCoordinates().equals(thisv2.getCoordinates())) && (fv1.getCoordinates().equals(thisv0.getCoordinates()) ||
+                fv1.getCoordinates().equals(thisv1.getCoordinates()) || fv1.getCoordinates().equals(thisv2.getCoordinates())) &&
+                (fv2.getCoordinates().equals(thisv0.getCoordinates()) ||  fv2.getCoordinates().equals(thisv1.getCoordinates()) ||
+                fv2.getCoordinates().equals(thisv2.getCoordinates()));
     }
 
 

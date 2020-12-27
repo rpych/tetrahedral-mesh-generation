@@ -33,7 +33,7 @@ public class TransformatorForLayers implements ITransformator {
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph);
         }
-        graph = addMissingFacesOnLayersBorder(graph);
+
         /*graph = createNewInteriorNodes();*/
         return graph;
     }
@@ -52,10 +52,9 @@ public class TransformatorForLayers implements ITransformator {
                                     edgeToBreak.getEdgeNodes().getValue1().getZCoordinate()) ?
                                     edgeToBreak.getEdgeNodes().getValue0().getCoordinates() :
                                     edgeToBreak.getEdgeNodes().getValue1().getCoordinates();
-        System.out.println(":: edgeToBreak = "+ edgeToBreak.getId());
+        System.out.println("RPY:: edgeToBreak = "+ edgeToBreak.getId());
 
         double fValue = LFunction.F(biggerZCoord); // Z coord
-        if(fValue < 0){ System.err.println("Error: FValue < 0.0 "); }
         Optional<Coordinates> breakPoint = LFunction.getBreakPoint(edgeToBreak, fValue);
         Pair<Vertex, Vertex> edgeToBreakVertices = new Pair<Vertex, Vertex>((Vertex)edgeToBreak.getEdgeNodes().getValue0(), (Vertex)edgeToBreak.getEdgeNodes().getValue1());
         Vertex vOpposite = getVertexForNewEdge(face, edgeToBreakVertices);
@@ -77,47 +76,22 @@ public class TransformatorForLayers implements ITransformator {
         return graph;
     }
 
-
-
-    public ModelGraph addMissingFacesOnLayersBorder(ModelGraph graph){
-        for(int i=0;i<LFunction.layersUpCoords.length;++i) {
-            double upperLayerBoundary = LFunction.layersUpCoords[i];
-            Collection<FaceNode> folb = graph.getFacesPartiallyLaidOnLayerBorder(upperLayerBoundary);
-            for(FaceNode face: folb){
-                Optional<FaceNode> nearestCongruentFace = graph.getNearestCongruentFace(face, folb);
-
-                if(nearestCongruentFace.isPresent()){
-                    Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(nearestCongruentFace.get());
-                    if(uncommonVertices.isPresent() && !graph.getEdgeBetweenNodes(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1()).isPresent()) {
-                        System.out.println("Missing edge added = " + uncommonVertices.get().getValue0() + "-->" + uncommonVertices.get().getValue1());
-                        graph.insertEdgeAutoNamedOrGet(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1(), false);
-                    }
-                }
-            }
-        }
-        graph = addNewFaces(graph);
-        return graph;
-    }
-
-
     public ModelGraph markFacesToBreak(ModelGraph graph){
         boolean faceFoundForRefinement = false;
         for(FaceNode faceNode : graph.getFaces()) {
             if(!graph.areVertexesLinked(faceNode)) {
                 faceNode.setR(true);
                 faceFoundForRefinement = true;
-                break;
             }
         }
-        if( !faceFoundForRefinement){ //found new face with different layers on it
+        /*if( !faceFoundForRefinement){ //found new face with different layers on it
             for(FaceNode faceNode : graph.getFaces()) {
                 List<GraphEdge> edgesOnBorder = getEdgesOnLayersBorder(graph, faceNode);
                 if(edgesOnBorder.size() > 0){
                     faceNode.setR(true);
-                    break;
                 }
             }
-        }
+        }*/
         return graph;
     }
 
@@ -125,25 +99,25 @@ public class TransformatorForLayers implements ITransformator {
         List<GraphEdge> edges = new LinkedList<>();
         Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
 
-        if(LFunction.areDifferentLayers( triangle.getValue0().getCoordinates(),
-                                         triangle.getValue1().getCoordinates() ))
+        if(LFunction.areDifferentLayers( LFunction.FLayer(triangle.getValue0().getCoordinates()),
+                                         LFunction.FLayer(triangle.getValue1().getCoordinates()) ))
         {
             GraphEdge edge1 = new GraphEdge(null, new Pair<>(triangle.getValue0(), triangle.getValue1()), false);
             edges.add(edge1);
         }
-        if(LFunction.areDifferentLayers( triangle.getValue0().getCoordinates(),
-                                         triangle.getValue2().getCoordinates()) )
+        if(LFunction.areDifferentLayers( LFunction.FLayer(triangle.getValue0().getCoordinates()),
+                                              LFunction.FLayer(triangle.getValue2().getCoordinates()) ))
         {
             GraphEdge edge2 = new GraphEdge(null, new Pair<>(triangle.getValue0(), triangle.getValue2()), false);
             edges.add(edge2);
         }
-        if(LFunction.areDifferentLayers( triangle.getValue1().getCoordinates(),
-                                         triangle.getValue2().getCoordinates()) )
+        if(LFunction.areDifferentLayers( LFunction.FLayer(triangle.getValue1().getCoordinates()),
+                LFunction.FLayer(triangle.getValue2().getCoordinates()) ))
         {
             GraphEdge edge3 = new GraphEdge(null, new Pair<>(triangle.getValue1(), triangle.getValue2()), false);
             edges.add(edge3);
         }
-        //System.out.println("CANDIDATES = " + edges);
+        System.out.println("RPY::CANDIDATES = " + edges);
         return edges;
     }
 
@@ -161,14 +135,12 @@ public class TransformatorForLayers implements ITransformator {
         //edge already broken so we can use this one
         if( !graph.isEdgeBetween(edgeToBreak.getEdgeNodes().getValue0(), edgeToBreak.getEdgeNodes().getValue1()) ){
             edgeToBreak = graph.insertEdgeAutoNamed(edgeToBreak.getEdgeNodes().getValue0(), edgeToBreak.getEdgeNodes().getValue1(), false);
-            //System.out.println("::add broken edge " + edgeToBreak.getId());
             return edgeToBreak;
         }
         else{
             Optional<GraphEdge> existingEdge = graph.getEdge((Vertex)edgeToBreak.getEdgeNodes().getValue0(), (Vertex)edgeToBreak.getEdgeNodes().getValue1());
             if(existingEdge.isPresent())
                 edgeToBreak = existingEdge.get();
-            //System.out.println("::existing edge = " + edgeToBreak.getId());
         }
         //another edge with the same length as edgeToBreak might have been already broken in another face
         double eps = 0.0000001;
@@ -178,7 +150,6 @@ public class TransformatorForLayers implements ITransformator {
             {
                 edgeToBreak = edge;
                 edgeToBreak = graph.insertEdgeAutoNamed(edgeToBreak.getEdgeNodes().getValue0(), edgeToBreak.getEdgeNodes().getValue1(), false);
-                //System.out.println(" ::hanging node edge = " + edgeToBreak.getId());
             }
         }
         return edgeToBreak;
@@ -188,7 +159,7 @@ public class TransformatorForLayers implements ITransformator {
     public ModelGraph performBreaking(ModelGraph modelGraph, Vertex vertex, GraphEdge edge, Optional<Coordinates> breakPoint) {
         Vertex newVertex = null;
         newVertex = modelGraph.insertVertexAutoNamedOptional(edge, breakPoint);
-        System.out.println(" NEWVERTEX = "+ newVertex.getId() + ", OPPVertex = "+ vertex.getId());
+        //System.out.println("RPY:: NEWVERTEX = "+ newVertex.getId() + ", OPPVertex = "+ vertex.getId());
         modelGraph.insertEdgeAutoNamedOrGet(vertex, newVertex, false);
 
         modelGraph.deleteEdge(edge.getId());
