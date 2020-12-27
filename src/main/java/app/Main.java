@@ -4,7 +4,6 @@ import model.ModelGraph;
 import model.Vertex;
 import model.Coordinates;
 import controller.Transformator;
-import controller.TransformatorForLayers;
 import visualization.MatlabVisualizer;
 
 import java.util.ArrayList;
@@ -13,31 +12,23 @@ import java.util.List;
 public class Main {
 	
     public static void main(String[] args) {
-        /*ModelGraph tetrahedra = generateTetrahedra();
+        ModelGraph tetrahedra = generateTetrahedra();
         Transformator transformator = new Transformator(tetrahedra);
         tetrahedra = transformator.transform();
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
-        matlabVisualizer.saveCode();*/
+        matlabVisualizer.saveCode();
         
-        /*ModelGraph tetrahedra2 = generateTetrahedra2();
+        ModelGraph tetrahedra2 = generateTetrahedra2();
         Transformator transformator2 = new Transformator(tetrahedra2);
         tetrahedra2 = transformator2.transform();
         MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(tetrahedra2, "vis2");
-        matlabVisualizer2.saveCode();*/
-        
-        /*ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
-        //Transformator transformator3 = new Transformator(cuboid);
-        //cuboid = transformator3.transform();
-        TransformatorForLayers transformator = new TransformatorForLayers(cuboid);
-        cuboid = transformator.transform();
-        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCuboid");
-        matlabVisualizer3.saveCode();*/
-
-        ModelGraph tetrahedra2 = generateTetrahedra();
-        TransformatorForLayers transformator2 = new TransformatorForLayers(tetrahedra2);
-        tetrahedra2 = transformator2.transform();
-        MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(tetrahedra2, "visLayer4");
         matlabVisualizer2.saveCode();
+        
+        ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
+//        Transformator transformator3 = new Transformator(cuboid);
+//        cuboid = transformator3.transform();
+        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "vis3");
+        matlabVisualizer3.saveCode();
         
         System.out.println("Program ended successfully");
     }
@@ -46,7 +37,7 @@ public class Main {
         ModelGraph graph = new ModelGraph("Graph");
 
         List<Vertex> nodes = new ArrayList<>();
-        nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.6, 0.40, 1.0)));//0.80
+        nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.6, 0.40, 0.80)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.5, 0.2, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(1.0, 0.0, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.0, 0.0, 0.0)));
@@ -58,9 +49,9 @@ public class Main {
         graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(3), true);
         graph.insertEdgeAutoNamed(nodes.get(2), nodes.get(3), true);
 
-        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2)).setR(true);
+        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2));
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
-        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3));//.setR(true);
+        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
 
         graph.insertInteriorNodeAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2), nodes.get(3));
