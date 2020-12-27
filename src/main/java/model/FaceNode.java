@@ -71,6 +71,12 @@ public class FaceNode extends GraphNode {
         return commonVertices.size() == 4;
     }
 
+    public boolean containsVertices(Vertex v1, Vertex v2){
+        return ( v1.getId().equals(triangle.getValue0().getId()) || v1.getId().equals(triangle.getValue1().getId()) ||
+                v1.getId().equals(triangle.getValue2().getId()) ) && ( v2.getId().equals(triangle.getValue0().getId()) ||
+                v2.getId().equals(triangle.getValue1().getId()) || v2.getId().equals(triangle.getValue2().getId()) );
+    }
+
     @Override
     public boolean equals(Object o){
         if (this == o) return true;

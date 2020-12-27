@@ -69,6 +69,14 @@ public class ModelGraph extends MultiGraph {
 		return insertVertex(vertexName, coordinates);
     }
 
+    public Vertex insertVertexAutoNamedOrGet(Coordinates coordinates) {
+        String vertexName = buildVertexName(coordinates);
+        Optional<Vertex> optVertex = getVertex(vertexName);
+        if(optVertex.isPresent())
+            return optVertex.get();
+        return insertVertex(vertexName, coordinates);
+    }
+
     public Optional<Vertex> removeVertex(String id) {
         Vertex vertex = vertices.remove(id);
         if (vertex != null) {
@@ -141,6 +149,14 @@ public class ModelGraph extends MultiGraph {
     
     public GraphEdge insertEdgeAutoNamed(GraphNode n1, GraphNode n2, boolean border) {
     	String edgeName = "E" + n1.getId() + "to" + n2.getId();
+        return insertEdge(edgeName, n1, n2, border, null);
+    }
+
+    public GraphEdge insertEdgeAutoNamedOrGet(GraphNode n1, GraphNode n2, boolean border) {
+        String edgeName = "E" + n1.getId() + "to" + n2.getId();
+        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2);
+        if(optEdge.isPresent())
+            return optEdge.get();
         return insertEdge(edgeName, n1, n2, border, null);
     }
 
@@ -254,7 +270,7 @@ public class ModelGraph extends MultiGraph {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
     
-    /*public boolean isEdgeBetween(Vertex v1, Vertex v2) {
+    /*public boolean (Vertex v1, Vertex v2) {
     	return null != v1.getEdgeBetween(v2);
     }*/
 
@@ -377,6 +393,13 @@ public class ModelGraph extends MultiGraph {
     //InteriorNode part
 
     public Collection<InteriorNode> getInteriorNodes() { return interiorNodes.values(); }
+
+    public void clearInteriorNodes(){
+        List<String> interiorNodesKeysCopy = new LinkedList<>(interiorNodes.keySet());
+        for(String interiorId: interiorNodesKeysCopy){
+            removeInteriorNode(interiorId);
+        }
+    }
 
     public InteriorNode insertInteriorNode(InteriorNode interiorNode) {
         Node node = this.addNode(interiorNode.getId());

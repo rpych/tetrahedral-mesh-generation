@@ -1,5 +1,6 @@
 package app;
 
+import controller.TransformatorForLayers;
 import model.ModelGraph;
 import model.Vertex;
 import model.Coordinates;
@@ -12,7 +13,7 @@ import java.util.List;
 public class Main {
 	
     public static void main(String[] args) {
-        ModelGraph tetrahedra = generateTetrahedra();
+        /*ModelGraph tetrahedra = generateTetrahedra();
         Transformator transformator = new Transformator(tetrahedra);
         tetrahedra = transformator.transform();
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
@@ -28,7 +29,13 @@ public class Main {
 //        Transformator transformator3 = new Transformator(cuboid);
 //        cuboid = transformator3.transform();
         MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "vis3");
-        matlabVisualizer3.saveCode();
+        matlabVisualizer3.saveCode();*/
+
+        ModelGraph tetrahedra2 = generateTetrahedra();
+        TransformatorForLayers transformator2 = new TransformatorForLayers(tetrahedra2);
+        tetrahedra2 = transformator2.transform();
+        MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(tetrahedra2, "visLay");
+        matlabVisualizer2.saveCode();
         
         System.out.println("Program ended successfully");
     }
@@ -41,6 +48,10 @@ public class Main {
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.5, 0.2, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(1.0, 0.0, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.0, 0.0, 0.0)));
+
+        //P1(0.45, 0.3, 0.6), P2(0.55, 0.3, 0.4), P3(0.76, 0.16, 0.32)
+        //10x + 5y + 5z - 9 = 0 => z = -2x -y + 1.8 zle
+        // 70x +85y + 35z - 78 = 0 => z = -2x -17/7y + 78/35
         
         graph.insertEdgeAutoNamed(nodes.get(0), nodes.get(1), true);
         graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(2), true);
@@ -49,9 +60,9 @@ public class Main {
         graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(3), true);
         graph.insertEdgeAutoNamed(nodes.get(2), nodes.get(3), true);
 
-        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2));
+        graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2)).setR(true);
         graph.insertFaceAutoNamed(nodes.get(0), nodes.get(1), nodes.get(3));
-        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3)).setR(true);
+        graph.insertFaceAutoNamed(nodes.get(1), nodes.get(2), nodes.get(3));//.setR(true);
         graph.insertFaceAutoNamed(nodes.get(2), nodes.get(0), nodes.get(3));
 
         graph.insertInteriorNodeAutoNamed(nodes.get(0), nodes.get(1), nodes.get(2), nodes.get(3));
