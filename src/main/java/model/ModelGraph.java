@@ -7,6 +7,7 @@ import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
+import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
@@ -390,6 +391,27 @@ public class ModelGraph extends MultiGraph {
     	return false;
     }
 
+    public Optional<FaceNode> getNearestCongruentFace(FaceNode face, Collection<FaceNode> faces){
+        double minDistance = 100000;
+        FaceNode nearestFace = null;
+        for(FaceNode faceOnBorder: faces){
+            if(!face.equals(faceOnBorder)){
+                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(faceOnBorder);
+                if(! uncommonVertices.isPresent()) continue;
+
+                Vertex uv0 = uncommonVertices.get().getValue0();
+                Vertex uv1 = uncommonVertices.get().getValue1();
+                double distance = Math.pow(uv0.getXCoordinate() - uv1.getXCoordinate(), 2)
+                        + Math.pow(uv0.getYCoordinate() - uv1.getYCoordinate(), 2);
+                if(distance < minDistance){
+                    minDistance = distance;
+                    nearestFace = faceOnBorder;
+                }
+            }
+        }
+        return Optional.ofNullable(nearestFace);
+    }
+
     //InteriorNode part
 
     public Collection<InteriorNode> getInteriorNodes() { return interiorNodes.values(); }
@@ -455,7 +477,6 @@ public class ModelGraph extends MultiGraph {
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
             Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph = this.findVerticesWhichFormsCandSubGraph(face);
-
             if( !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
                 insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
             }

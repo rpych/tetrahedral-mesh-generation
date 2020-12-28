@@ -43,17 +43,17 @@ public class TransformatorForLayers {
         while(face.isPresent() ){
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
-
-            do {
-                System.out.println("STACK = "+ hangingEdges.peek().getId().toString());
+            while( !hangingEdges.empty() ){
+                System.out.println("STACK = "+ hangingEdges.peek().getId());
                 Optional<FaceNode> faceHN = findFaceWithHangingNode(graph);
-                if(!faceHN.isPresent()) break;
+                if(!faceHN.isPresent()) {
+                    System.err.println("Stack not empty but hanging node not found");
+                }
                 processLastHangingNode(graph, faceHN.get());
                 graph = addNewFaces(graph);
-
-
-            }while( !hangingEdges.empty() );
-            /*graph = createNewInteriorNodes();*/
+            }
+            addMissingEdgesBetweenFaces(graph);
+            graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph); //face on different layers
             if(counter == 10) break;
@@ -86,7 +86,7 @@ public class TransformatorForLayers {
         if(isLastHNRefined(longestEdge) && !existsFaceWithEdge(graph, longestEdge)){
             hangingEdges.pop();
         }
-        else{
+        else if(!isLastHNRefined(longestEdge)){
             hangingEdges.push(longestEdge);
             currentEdge = longestEdge;
         }
@@ -94,10 +94,10 @@ public class TransformatorForLayers {
     }
 
     public boolean isLastHNRefined(GraphEdge longestEdge){
-        return (hangingEdges.peek().getEdgeNodes().getValue0().equals(longestEdge.getEdgeNodes().getValue0()) ||
-                hangingEdges.peek().getEdgeNodes().getValue0().equals(longestEdge.getEdgeNodes().getValue1())) &&
-                (hangingEdges.peek().getEdgeNodes().getValue1().equals(longestEdge.getEdgeNodes().getValue0()) ||
-                hangingEdges.peek().getEdgeNodes().getValue1().equals(longestEdge.getEdgeNodes().getValue1()));
+        return (hangingEdges.peek().getEdgeNodes().getValue0().getId().equals(longestEdge.getEdgeNodes().getValue0().getId()) ||
+                hangingEdges.peek().getEdgeNodes().getValue0().getId().equals(longestEdge.getEdgeNodes().getValue1().getId())) &&
+                (hangingEdges.peek().getEdgeNodes().getValue1().getId().equals(longestEdge.getEdgeNodes().getValue0().getId()) ||
+                hangingEdges.peek().getEdgeNodes().getValue1().getId().equals(longestEdge.getEdgeNodes().getValue1().getId()));
     }
 
     public boolean existsFaceWithEdge(ModelGraph graph, GraphEdge edge){
@@ -105,14 +105,11 @@ public class TransformatorForLayers {
     }
 
     public ModelGraph breakFace(ModelGraph graph, FaceNode face){
-        //Vertex v0 = face.getTriangle().getValue0(), v1 = face.getTriangle().getValue1(), v2 = face.getTriangle().getValue2();
         Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(face);
-        GraphEdge longestEdge = graph.getEdgeNotOptional(longEdgeVert.getValue0(), longEdgeVert.getValue1());
+        GraphEdge longestEdge = graph.getEdgeBetweenNodes(longEdgeVert.getValue0(), longEdgeVert.getValue1()).get();
         Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
         graph = performBreaking(graph, vOpposite, longestEdge);
 
-        //Collection<FaceNode> facesWithLongestEdge = getFacesWithEdge(graph, longestEdge);
-       // for(int i=0;i<facesWithLongestEdge.size();++i)
         System.out.println("longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
         hangingEdges.push(longestEdge);
 
@@ -135,6 +132,25 @@ public class TransformatorForLayers {
 
         return graph;
 
+    }
+
+    public ModelGraph addMissingEdgesBetweenFaces(ModelGraph graph){
+        Collection<FaceNode> faces = graph.getFaces();
+        for(FaceNode face: faces){
+            Optional<FaceNode> nearestCongruentFace = graph.getNearestCongruentFace(face, faces);
+
+            if(nearestCongruentFace.isPresent()){
+                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(nearestCongruentFace.get());
+                if(uncommonVertices.isPresent() && !graph.getEdgeBetweenNodes(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1()).isPresent()
+                    && (Math.abs(uncommonVertices.get().getValue0().getZCoordinate() - uncommonVertices.get().getValue1().getZCoordinate()) < EPS) )  {
+                    System.out.println("Missing edge added = " + uncommonVertices.get().getValue0() + "-->" + uncommonVertices.get().getValue1());
+                    graph.insertEdgeAutoNamedOrGet(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1(), false);
+                }
+            }
+        }
+
+        graph = addNewFaces(graph);
+        return graph;
     }
 
     public Collection<FaceNode> getFacesWithEdge(ModelGraph graph, GraphEdge edge){
@@ -232,7 +248,7 @@ public class TransformatorForLayers {
         }
         if(v1v2Len >= longestEdgeLen){
             if(v1v2Len > longestEdgeLen){
-                longestEdgeLen = v1v2Len;
+                //longestEdgeLen = v1v2Len;
                 longestEdge = new Pair<>(v1, v2);
             }
             else if((Math.abs(v1v2Len-longestEdgeLen) < EPS) && graph.isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
@@ -247,7 +263,6 @@ public class TransformatorForLayers {
     //InteriorNode part
 
     public ModelGraph createNewInteriorNodes(){
-        //String initialIntNodeName = graph.getInteriorNodes().iterator().next().getId(); //first and only entry in Map so far
         graph.clearInteriorNodes();
         return graph.createInteriorNodesForNewlyFoundSubGraphs();
     }

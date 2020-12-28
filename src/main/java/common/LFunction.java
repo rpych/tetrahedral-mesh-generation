@@ -9,7 +9,7 @@ import java.util.*;
 public class LFunction {
 
     private static double BlueLayerHeight = 1.0f;
-    private static double YellowLayerHeight = 0.70f;
+    private static double YellowLayerHeight = 0.30f;
     private static double OrangeLayerHeight = 0.00f;
     private static double layersLowerBoundary = 0.0f;
     public static double layersUpCoords[] = new double[]{YellowLayerHeight, OrangeLayerHeight};
