@@ -17,7 +17,7 @@ public class InteriorNode extends GraphNode{
         quartet = new Quartet<>(v1, v2, v3, v4);
     }
 
-    Quartet<Vertex, Vertex, Vertex, Vertex> getQuartet() { return  quartet; }
+    public Quartet<Vertex, Vertex, Vertex, Vertex> getQuartet() { return  quartet; }
 
     private static Coordinates getInteriorNodePosition(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         return new Coordinates(getInteriorNodeXCoordinate(v1, v2, v3, v4), getInteriorNodeYCoordinate(v1, v2, v3, v4), getInteriorNodeZCoordinate(v1, v2, v3, v4));
@@ -33,5 +33,15 @@ public class InteriorNode extends GraphNode{
 
     private static double getInteriorNodeZCoordinate(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         return (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate() + v4.getZCoordinate()) / 4d;
+    }
+
+    public boolean containsFace(FaceNode face){
+        Vertex v0 = face.getTriangle().getValue0(), v1 = face.getTriangle().getValue1(), v2 = face.getTriangle().getValue2();
+        return ( v0.getId().equals(quartet.getValue0().getId()) || v0.getId().equals(quartet.getValue1().getId()) ||
+                v0.getId().equals(quartet.getValue2().getId()) || v0.getId().equals(quartet.getValue3().getId()) ) &&
+                ( v1.getId().equals(quartet.getValue0().getId()) || v1.getId().equals(quartet.getValue1().getId()) ||
+                v1.getId().equals(quartet.getValue2().getId()) || v1.getId().equals(quartet.getValue3().getId()) ) &&
+                ( v2.getId().equals(quartet.getValue0().getId()) || v2.getId().equals(quartet.getValue1().getId()) ||
+                v2.getId().equals(quartet.getValue2().getId()) || v2.getId().equals(quartet.getValue3().getId()) );
     }
 }

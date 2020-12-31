@@ -1,7 +1,5 @@
 package model;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import common.ElementAttributes;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
@@ -11,7 +9,6 @@ import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +21,8 @@ public class ModelGraph extends MultiGraph {
     private Map<String, GraphEdge> edges = new HashMap<>();
 
     private Map<String, InteriorNode> interiorNodes = new HashMap<>();
+
+    public LinkedList<FaceNode> debugFaces = new LinkedList<>();
 
     public ModelGraph(String id) {
         super(id);
@@ -59,9 +58,9 @@ public class ModelGraph extends MultiGraph {
     }
     
     public String buildVertexName(Coordinates coordinates) {
-    	String vertexName = "V_" + String.format ("%.2f", coordinates.getX()) + "_"
-				+ String.format ("%.2f", coordinates.getY()) + "_"
-				+ String.format ("%.2f", coordinates.getZ());
+    	String vertexName = "V_" + String.format ("%.7f", coordinates.getX()) + "_"
+				+ String.format ("%.7f", coordinates.getY()) + "_"
+				+ String.format ("%.7f", coordinates.getZ());
     	return vertexName;
     }
     
@@ -127,10 +126,26 @@ public class ModelGraph extends MultiGraph {
     			(v1.getYCoordinate() + v2.getYCoordinate() + v3.getYCoordinate()) / 3d,
     			(v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d
     			);
-    	String id = "F_" + String.format ("%.2f", coordinates.getX()) + "_"
-				+ String.format ("%.2f", coordinates.getY()) + "_"
-				+ String.format ("%.2f", coordinates.getZ());
+    	String id = "F_" + String.format ("%.7f", coordinates.getX()) + "_"
+				+ String.format ("%.7f", coordinates.getY()) + "_"
+				+ String.format ("%.7f", coordinates.getZ()); //+ "_G" + IdGenerator.getFreeNodeId()
 //    	System.out.println(id);
+        return insertFace(id, v1, v2, v3);
+    }
+
+    public FaceNode insertFaceAutoNamedOrGet(Vertex v1, Vertex v2, Vertex v3) {
+        Coordinates  coordinates = new Coordinates(
+                (v1.getXCoordinate() + v2.getXCoordinate() + v3.getXCoordinate()) / 3d,
+                (v1.getYCoordinate() + v2.getYCoordinate() + v3.getYCoordinate()) / 3d,
+                (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d
+        );
+        String id = "F_" + String.format ("%.7f", coordinates.getX()) + "_"
+                + String.format ("%.7f", coordinates.getY()) + "_"
+                + String.format ("%.7f", coordinates.getZ()); //+ "_G" + IdGenerator.getFreeNodeId()
+        Optional<FaceNode> faceOpt = getFace(id);
+        if(faceOpt.isPresent()){
+            return faceOpt.get();
+        }
         return insertFace(id, v1, v2, v3);
     }
     
@@ -401,8 +416,10 @@ public class ModelGraph extends MultiGraph {
 
                 Vertex uv0 = uncommonVertices.get().getValue0();
                 Vertex uv1 = uncommonVertices.get().getValue1();
-                double distance = Math.pow(uv0.getXCoordinate() - uv1.getXCoordinate(), 2)
-                        + Math.pow(uv0.getYCoordinate() - uv1.getYCoordinate(), 2);
+                /*double distance = Math.pow(uv0.getXCoordinate() - uv1.getXCoordinate(), 2)
+                        + Math.pow(uv0.getYCoordinate() - uv1.getYCoordinate(), 2); */
+
+                double distance = Coordinates.distance(uv0.getCoordinates(), uv1.getCoordinates());
                 if(distance < minDistance){
                     minDistance = distance;
                     nearestFace = faceOnBorder;
@@ -463,22 +480,31 @@ public class ModelGraph extends MultiGraph {
 
     private boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
         Quartet<Vertex, Vertex, Vertex, Vertex> quartetNode = intNode.getQuartet();
-        return (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
-                isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue3()) ) &&
-                (isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue1()) ||
-                isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue3()) ) &&
-                (isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue1()) ||
-                isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue3()) ) &&
-                (isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue1()) ||
-                isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue3()) );
+        boolean res = false;
+        //try {
+
+            res = (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
+                    isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue3())) &&
+                    (isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue1()) ||
+                            isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue3())) &&
+                    (isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue1()) ||
+                            isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue3())) &&
+                    (isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue1()) ||
+                            isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue3()));
+        /*}catch(NullPointerException e){
+            System.out.println("QUARTET = "+quartetNode.getValue0() + ", " + quartetNode.getValue1()+ ", " +quartetNode.getValue2() + ", " + quartetNode.getValue3() );
+        }*/
+        return res;
     }
 
     //main method for InteriorNode
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
-            Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph = this.findVerticesWhichFormsCandSubGraph(face);
-            if( !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
-                insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+            List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
+            for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
+                if( candSubGraph != null && !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
+                    insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+                }
             }
         }
         return this;
@@ -493,7 +519,7 @@ public class ModelGraph extends MultiGraph {
         return false;
     }
 
-    private Quartet<Vertex, Vertex, Vertex, Vertex> findVerticesWhichFormsCandSubGraph(FaceNode face){
+    private List<Quartet<Vertex, Vertex, Vertex, Vertex>> findVerticesWhichFormsCandSubGraph(FaceNode face){
        Map<String, Integer> candSubGraphTopVertices = new HashMap<>();
        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
        Vertex v0 = triangle.getValue0(), v1 = triangle.getValue1(), v2 = triangle.getValue2();
@@ -502,10 +528,14 @@ public class ModelGraph extends MultiGraph {
                processFaceToFindSubgraphTopVertex(f, triangle, candSubGraphTopVertices);
            }
        }
-        Optional<Vertex> topVertex = getSubgraphTopVertex(triangle, candSubGraphTopVertices);
-        Quartet<Vertex, Vertex, Vertex, Vertex> subGraphVertices = null;
-       if(topVertex.isPresent()){
-           subGraphVertices = new Quartet<>(v0, v1, v2, topVertex.get());
+        List<Vertex> topVertices = getSubgraphTopVertex(triangle, candSubGraphTopVertices, face);
+        List<Quartet<Vertex, Vertex, Vertex, Vertex>> subGraphVertices = new LinkedList<>();
+
+       if(topVertices.size() > 0){
+           for(Vertex topVertex: topVertices){
+               subGraphVertices.add(new Quartet<>(v0, v1, v2, topVertex));
+           }
+
        }
        return subGraphVertices;
     }
@@ -513,29 +543,44 @@ public class ModelGraph extends MultiGraph {
     private void processFaceToFindSubgraphTopVertex(FaceNode face, Triplet<Vertex, Vertex, Vertex> triangleBase, Map<String, Integer> topVertices){
         Triplet<Vertex, Vertex, Vertex> congruentTriangle = face.getTriangle();
         Vertex v0 = congruentTriangle.getValue0(), v1 = congruentTriangle.getValue1(), v2 = congruentTriangle.getValue2();
-        if( v0 != triangleBase.getValue0() && v0 != triangleBase.getValue1() && v0 != triangleBase.getValue2() ){
+        if( !v0.getId().equals(triangleBase.getValue0().getId()) && !v0.getId().equals(triangleBase.getValue1().getId())
+                && !v0.getId().equals(triangleBase.getValue2().getId()) ){
             Integer counter = topVertices.getOrDefault(v0.getId(), 0);
             topVertices.put(v0.getId(), ++counter);
         }
-        else if( v1 != triangleBase.getValue0() && v1 != triangleBase.getValue1() && v1 != triangleBase.getValue2() ){
+        else if( !v1.getId().equals(triangleBase.getValue0().getId()) && !v1.getId().equals(triangleBase.getValue1().getId())
+                && !v1.getId().equals(triangleBase.getValue2().getId()) ){
             Integer counter = topVertices.getOrDefault(v1.getId(), 0);
             topVertices.put(v1.getId(), ++counter);
         }
-        else if( v2 != triangleBase.getValue0() && v2 != triangleBase.getValue1() && v2 != triangleBase.getValue2() ){
+        else if( !v2.getId().equals(triangleBase.getValue0().getId()) && !v2.getId().equals(triangleBase.getValue1().getId())
+                && !v2.getId().equals(triangleBase.getValue2().getId()) ){
             Integer counter = topVertices.getOrDefault(v2.getId(), 0);
             topVertices.put(v2.getId(), ++counter);
         }
     }
 
-    public Optional<Vertex> getSubgraphTopVertex(Triplet<Vertex, Vertex, Vertex> triangle, Map<String, Integer> candSubGraphTopVertices){
-        Vertex topVertex = null;
+    public List<Vertex> getSubgraphTopVertex(Triplet<Vertex, Vertex, Vertex> triangle, Map<String, Integer> candSubGraphTopVertices, FaceNode face){
+        int counter = 0;
+        List<Vertex> topVertices = new LinkedList<>();
         for(Map.Entry<String, Integer> candVertex: candSubGraphTopVertices.entrySet()){
             if(candVertex.getValue() == 3) { //common vertex for all 3 faces congruent with face formed by triangle parameter
-                topVertex = vertices.get(candVertex.getKey());
-                break;
+                topVertices.add(vertices.get(candVertex.getKey()));
+                counter += 1;
+                //break;
             }
         }
-        return Optional.ofNullable(topVertex);
+        if(topVertices.size() == 0){
+            String s = "";
+            for(Map.Entry<String, Integer> candVertex: candSubGraphTopVertices.entrySet()){
+                s += (" " + candVertex.getKey() + ": "+ candVertex.getValue());
+            }
+            System.out.println("RAFAL = "+s );
+            System.out.println("RAFAL FACE = "+ triangle.getValue0().getId() + ", "+ triangle.getValue1().getId() + ", "+ triangle.getValue2().getId());
+            System.out.println("RAFAL CENRAL ID = " + face.getId());
+        }
+        //System.out.println("RAPTOR candidates counter = "+ counter);
+        return topVertices;
     }
 
 }
