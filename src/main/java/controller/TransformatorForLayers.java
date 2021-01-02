@@ -3,7 +3,6 @@ package controller;
 import common.LFunction;
 import model.*;
 import org.javatuples.Pair;
-import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import visualization.MatlabVisualizer;
 
@@ -12,8 +11,6 @@ import java.util.*;
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
-    public GraphEdge currentEdge;
-    //public boolean flag= false;
     static final double EPS = 0.00000001;
 
     public TransformatorForLayers(ModelGraph graph) {
@@ -28,7 +25,7 @@ public class TransformatorForLayers {
     public ModelGraph transform(ModelGraph graph) {
         Optional<FaceNode> face = findFaceToBreak(graph);
         int counter  = 0;
-        while(face.isPresent() ){
+        while(face.isPresent()){
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
             while( !hangingEdges.empty() ){
@@ -42,21 +39,20 @@ public class TransformatorForLayers {
                 processLastHangingNode(graph, faceHN.get());
                 graph = addNewFaces(graph);
             }
-            //graph = addMissingEdgesBetweenFaces(graph);
             graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph); //face on different layers
             if(!checkAllFacesBelongToInteriorNode(graph)){
                 System.err.println("Some FACES do not belong to any interiorNode " + counter);
-            }else{
-                System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
-            }
+            }else System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
+
             if(isEnoughBreakingAccuracy(graph)) {
                 System.out.println("ENOUGH accuracy met");
                 break;
             }
-            checkFacesConnected(graph, counter);
-            if(counter == 180) break;
+            checkFacesConnected(graph);
+            checkInteriorNodesMinMaxBreakingRatio(graph);
+            //if(counter == 180) break;
         }
         return graph;
     }
@@ -88,38 +84,7 @@ public class TransformatorForLayers {
         return f;
     }
 
-    public void checkFacesConnected(ModelGraph graph, int counter){
-        for(FaceNode face: graph.getFaces()){
-            if(!graph.areVertexesLinked(face)){
-                System.out.println("Face exists but its vertices are not linked !!!!!");
-            }
-        }
-    }
 
-    public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 50, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
-        for(InteriorNode interiorNode: graph.getInteriorNodes()){
-            boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
-            boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
-            if(resIntermed) numOfIntNodesBelowThreshIntermed++;
-            if(resLowest) numOfIntNodesBelowThreshLow++;
-            if(numOfIntNodesBelowThreshIntermed >= numOfReqIntNodesBelowThresh &&
-                numOfIntNodesBelowThreshLow >= numOfReqIntNodesBelowThresh){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public int isFaceInAnyInteriorNode(FaceNode face){
-        int count = 0;
-        Collection<InteriorNode> interiorNodes = graph.getInteriorNodes();
-        for(InteriorNode node: interiorNodes){
-            //Quartet<Vertex, Vertex, Vertex, Vertex> vertices = node.getQuartet();
-            if(node.containsFace(face)) count++;
-        }
-        return count;
-    }
 
     public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
         for(FaceNode face: graph.getFaces()){
@@ -157,7 +122,6 @@ public class TransformatorForLayers {
         }
         else if(!isLastHNRefined(longestEdge)){
             hangingEdges.push(longestEdge);
-            currentEdge = longestEdge;
         }
         return graph;
     }
@@ -182,67 +146,26 @@ public class TransformatorForLayers {
         System.out.println("longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
         hangingEdges.push(longestEdge);
 
-        currentEdge = longestEdge;
         return graph;
     }
 
     public ModelGraph performBreaking(ModelGraph graph, Vertex opposite, GraphEdge edge){
-        //try {
-            Vertex newVertex = graph.insertVertexAutoNamedOrGet(edge.getMiddlePointCoordinates());
-            graph.insertEdgeAutoNamedOrGet(opposite, newVertex, false);
+        Vertex newVertex = graph.insertVertexAutoNamedOrGet(edge.getMiddlePointCoordinates());
+        graph.insertEdgeAutoNamedOrGet(opposite, newVertex, false);
 
-            graph.deleteEdge(edge.getId());
-            graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue0(), newVertex, true);
-            graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue1(), newVertex, true);
+        graph.deleteEdge(edge.getId());
+        graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue0(), newVertex, true);
+        graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue1(), newVertex, true);
 
-            Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<>(opposite, (Vertex) edge.getEdgeNodes().getValue0(), (Vertex) edge.getEdgeNodes().getValue1());
-            graph = removeFace(graph, triangle);
-            graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
-            graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
-
-
-        /*}catch(org.graphstream.graph.IdAlreadyInUseException e){
-            System.out.println("RPY::ERROR occured");
-            MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(graph, "visLay1");
-            matlabVisualizer2.saveCode();
-        }*/
-        return graph;
-    }
-
-    public ModelGraph addMissingEdgesBetweenFaces(ModelGraph graph){
-        Collection<FaceNode> faces = new LinkedList<>(graph.getFaces());
-        for(FaceNode face: faces){
-            Optional<FaceNode> nearestCongruentFace = graph.getNearestCongruentFace(face, faces);
-
-            if(nearestCongruentFace.isPresent()){
-                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(nearestCongruentFace.get());
-                Optional<Pair<Vertex, Vertex>> commonVertices = face.getVerticesFromCongruentEdge(nearestCongruentFace.get());
-                if(!commonVertices.isPresent() || !uncommonVertices.isPresent()) continue;
-                boolean newEdgeDoesNotSliceCommonEdge = edgeDoesNotSliceSecondEdge(uncommonVertices, commonVertices);
-                if( newEdgeDoesNotSliceCommonEdge && !graph.getEdgeBetweenNodes(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1()).isPresent()
-                    && (Math.abs(uncommonVertices.get().getValue0().getZCoordinate() - uncommonVertices.get().getValue1().getZCoordinate()) < EPS  )
-                    && !graph.hasFaceNode(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1(), commonVertices.get().getValue0())
-                    && !graph.hasFaceNode(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1(), commonVertices.get().getValue1()) )  {
-                    System.out.println("Missing edge added = " + uncommonVertices.get().getValue0() + "-->" + uncommonVertices.get().getValue1() +
-                            ", commonVert = "+ commonVertices.get().getValue0() + "-->>"+ commonVertices.get().getValue1());
-                    graph.insertEdgeAutoNamedOrGet(uncommonVertices.get().getValue0(), uncommonVertices.get().getValue1(), false);
-                    //flag = true;
-                }
-            }
-            graph = addNewFaces(graph);
-        }
-
+        Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<>(opposite, (Vertex) edge.getEdgeNodes().getValue0(), (Vertex) edge.getEdgeNodes().getValue1());
+        graph = removeFace(graph, triangle);
+        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
+        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
 
         return graph;
     }
 
-    public boolean edgeDoesNotSliceSecondEdge(Optional<Pair<Vertex, Vertex>> uncommonVertices,
-                                              Optional<Pair<Vertex, Vertex>> commonVertices){
-        return !((Math.abs(uncommonVertices.get().getValue0().getXCoordinate()-
-                uncommonVertices.get().getValue1().getXCoordinate()) < EPS)
-                && (Math.abs(Coordinates.middlePoint(commonVertices.get().getValue0().getCoordinates(), commonVertices.get().getValue1().getCoordinates())
-                .getZ()-uncommonVertices.get().getValue0().getZCoordinate()) < EPS));
-    }
+
 
     public Collection<FaceNode> getFacesWithEdge(ModelGraph graph, GraphEdge edge){
         Vertex v0 = (Vertex)edge.getEdgeNodes().getValue0(), v1 = (Vertex)edge.getEdgeNodes().getValue1();
@@ -263,7 +186,6 @@ public class TransformatorForLayers {
             for(Vertex v : cv) {
                 if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
                     graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
-                    System.out.println("RPY FACE ADDED = " + edgeVertices.getValue0().getId() + ", "+ edgeVertices.getValue1().getId() + ", "+ v.getId());
                 }
             }
         }
@@ -364,6 +286,87 @@ public class TransformatorForLayers {
     public ModelGraph createNewInteriorNodes(){
         graph.clearInteriorNodes();
         return graph.createInteriorNodesForNewlyFoundSubGraphs();
+    }
+
+    //checks
+    public void checkFacesConnected(ModelGraph graph){
+        for(FaceNode face: graph.getFaces()){
+            if(!graph.areVertexesLinked(face)){
+                System.out.println("Face exists but its vertices are not linked !!!!!");
+            }
+        }
+    }
+
+    public boolean isEnoughBreakingAccuracy(ModelGraph graph){
+        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        for(InteriorNode interiorNode: graph.getInteriorNodes()){
+            boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
+            boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
+            if(resIntermed) numOfIntNodesBelowThreshIntermed++;
+            if(resLowest) numOfIntNodesBelowThreshLow++;
+            if(numOfIntNodesBelowThreshIntermed >= numOfReqIntNodesBelowThresh &&
+                    numOfIntNodesBelowThreshLow >= numOfReqIntNodesBelowThresh){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int isFaceInAnyInteriorNode(FaceNode face){
+        int count = 0;
+        Collection<InteriorNode> interiorNodes = graph.getInteriorNodes();
+        for(InteriorNode node: interiorNodes){
+            if(node.containsFace(face)) count++;
+        }
+        return count;
+    }
+
+    public void checkInteriorNodesMinMaxBreakingRatio(ModelGraph graph){
+        double min_dist = 1000.0, max_dist = 0.0;
+        for(InteriorNode node: graph.getInteriorNodes()){
+            Vertex hZVertex = findVertexWithHighestZCoord(node);
+            Triplet<Vertex, Vertex, Vertex> basisTriangle = getBasisTriangleFromInteriorNode(node, hZVertex);
+            FaceNode basisFace = graph.getFace(basisTriangle);
+            if(basisFace != null){
+                double height = Math.abs(hZVertex.getZCoordinate() - basisFace.getZCoordinate());
+                if(height > max_dist) max_dist = height;
+                if(height < min_dist) min_dist = height;
+            }
+        }
+        double ratio = max_dist/min_dist;
+        System.out.println("Current breaking ratio = "+ratio);
+    }
+
+    public Vertex findVertexWithHighestZCoord(InteriorNode node){
+        if(node.getQuartet().getValue0().getZCoordinate() >= node.getQuartet().getValue1().getZCoordinate() &&
+                node.getQuartet().getValue0().getZCoordinate() >= node.getQuartet().getValue2().getZCoordinate() &&
+                node.getQuartet().getValue0().getZCoordinate() >= node.getQuartet().getValue3().getZCoordinate()){
+            return node.getQuartet().getValue0();
+        }
+        else if(node.getQuartet().getValue1().getZCoordinate() >= node.getQuartet().getValue0().getZCoordinate() &&
+                node.getQuartet().getValue1().getZCoordinate() >= node.getQuartet().getValue2().getZCoordinate() &&
+                node.getQuartet().getValue1().getZCoordinate() >= node.getQuartet().getValue3().getZCoordinate()){
+            return node.getQuartet().getValue1();
+        }
+        else if(node.getQuartet().getValue2().getZCoordinate() >= node.getQuartet().getValue0().getZCoordinate() &&
+                node.getQuartet().getValue2().getZCoordinate() >= node.getQuartet().getValue1().getZCoordinate() &&
+                node.getQuartet().getValue2().getZCoordinate() >= node.getQuartet().getValue3().getZCoordinate()){
+            return node.getQuartet().getValue2();
+        }
+        return node.getQuartet().getValue3();
+    }
+
+    public Triplet<Vertex, Vertex, Vertex> getBasisTriangleFromInteriorNode(InteriorNode node, Vertex topVertex){
+        if(topVertex.getId().equals(node.getQuartet().getValue0().getId())){
+            return new Triplet<>(node.getQuartet().getValue1(), node.getQuartet().getValue2(), node.getQuartet().getValue3());
+        }
+        else if(topVertex.getId().equals(node.getQuartet().getValue1().getId())){
+            return new Triplet<>(node.getQuartet().getValue0(), node.getQuartet().getValue2(), node.getQuartet().getValue3());
+        }
+        else if(topVertex.getId().equals(node.getQuartet().getValue2().getId())){
+            return new Triplet<>(node.getQuartet().getValue0(), node.getQuartet().getValue1(), node.getQuartet().getValue3());
+        }
+        return new Triplet<>(node.getQuartet().getValue0(), node.getQuartet().getValue1(), node.getQuartet().getValue2());
     }
 
 }
