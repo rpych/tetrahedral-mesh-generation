@@ -1,6 +1,7 @@
 package model;
 
 import common.ElementAttributes;
+import common.IdFormatter;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Element;
 import org.graphstream.graph.Node;
@@ -9,6 +10,8 @@ import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +26,8 @@ public class ModelGraph extends MultiGraph {
     private Map<String, InteriorNode> interiorNodes = new HashMap<>();
 
     public LinkedList<FaceNode> debugFaces = new LinkedList<>();
+
+    //private static DecimalFormat df = new DecimalFormat("0.0000000");
 
     public ModelGraph(String id) {
         super(id);
@@ -58,9 +63,9 @@ public class ModelGraph extends MultiGraph {
     }
     
     public String buildVertexName(Coordinates coordinates) {
-    	String vertexName = "V_" + String.format ("%.7f", coordinates.getX()) + "_"
-				+ String.format ("%.7f", coordinates.getY()) + "_"
-				+ String.format ("%.7f", coordinates.getZ());
+        String vertexName = "V_" + IdFormatter.df.format(coordinates.getX()) + "_"
+                + IdFormatter.df.format(coordinates.getY()) + "_"
+                + IdFormatter.df.format(coordinates.getZ());
     	return vertexName;
     }
     
@@ -126,28 +131,14 @@ public class ModelGraph extends MultiGraph {
     			(v1.getYCoordinate() + v2.getYCoordinate() + v3.getYCoordinate()) / 3d,
     			(v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d
     			);
-    	String id = "F_" + String.format ("%.7f", coordinates.getX()) + "_"
-				+ String.format ("%.7f", coordinates.getY()) + "_"
-				+ String.format ("%.7f", coordinates.getZ());
+
+        String id = "F_" + IdFormatter.df.format(coordinates.getX()) + "_"
+                + IdFormatter.df.format(coordinates.getY()) + "_"
+                + IdFormatter.df.format(coordinates.getZ());
 //    	System.out.println(id);
         return insertFace(id, v1, v2, v3);
     }
 
-    /*public FaceNode insertFaceAutoNamedOrGet(Vertex v1, Vertex v2, Vertex v3) {
-        Coordinates  coordinates = new Coordinates(
-                (v1.getXCoordinate() + v2.getXCoordinate() + v3.getXCoordinate()) / 3d,
-                (v1.getYCoordinate() + v2.getYCoordinate() + v3.getYCoordinate()) / 3d,
-                (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d
-        );
-        String id = "F_" + String.format ("%.7f", coordinates.getX()) + "_"
-                + String.format ("%.7f", coordinates.getY()) + "_"
-                + String.format ("%.7f", coordinates.getZ());
-        Optional<FaceNode> faceOpt = getFace(id);
-        if(faceOpt.isPresent()){
-            return faceOpt.get();
-        }
-        return insertFace(id, v1, v2, v3);
-    }*/
     
     public void removeFace(String id) {
         List<String> edgesToRemove = edges.values().stream()

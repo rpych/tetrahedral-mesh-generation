@@ -24,7 +24,8 @@ public class LFunction {
         //planes.put(LAYER.INTERMEDIATE, (new Plane(70.0, 85.0, 35.0, -78.0)));
         //planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -0.7)));
         //planes.put(LAYER.LOWEST, (new Plane(0.0, 0.0, 1.0, -0.3)));
-        planes.put(LAYER.LOWEST, (new Plane(50.0, -100.0, 590.0, -199.0)));
+        //planes.put(LAYER.LOWEST, (new Plane(50.0, -100.0, 590.0, -199.0)));
+        planes.put(LAYER.LOWEST, (new Plane(1.0, 0.0, 10.0, -4.0)));
     }
 
     public enum LAYER{

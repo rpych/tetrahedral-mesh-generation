@@ -28,7 +28,7 @@ public class Main {
         ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
         TransformatorForLayers transformator3 = new TransformatorForLayers(cuboid);
         cuboid = transformator3.transform();
-        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCub");
+        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCuboid");
         matlabVisualizer3.saveCode();
 
         /*ModelGraph tetrahedra2 = generateTetrahedra();
@@ -64,6 +64,12 @@ public class Main {
 
         //P1(0.45, 0.3, 0.35), P2(0.55, 0.35, 0.35), P3(0.76, 0.16, 0.3)
         //50x - 100y + 590z - 199 = 0 => z = -5/59x + 10/59y + (199/590)
+
+        //P1(0.0, 0.3, 0.35), P2(0.0, 0.8, 0.35), P3(2.0, 0.4, 0.3)
+        //x + 40z - 14 = 0 => z = -(1/40)x + (14/40)
+
+        //P1(0.0, 0.3, 0.4), P2(0.0, 0.8, 0.4), P3(2.0, 0.4, 0.2)
+        //x + 10z - 4 = 0 => z = -(0.1)*x + 0.4
         
         graph.insertEdgeAutoNamed(nodes.get(0), nodes.get(1), true);
         graph.insertEdgeAutoNamed(nodes.get(1), nodes.get(2), true);

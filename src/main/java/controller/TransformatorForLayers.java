@@ -11,6 +11,7 @@ import java.util.*;
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
+    public double breakRatio;
     static final double EPS = 0.00000001;
 
     public TransformatorForLayers(ModelGraph graph) {
@@ -50,7 +51,7 @@ public class TransformatorForLayers {
                 System.out.println("ENOUGH accuracy met");
                 break;
             }
-            checkFacesConnected(graph);
+            //checkFacesConnected(graph);
             checkInteriorNodesMinMaxBreakingRatio(graph);
             //if(counter == 180) break;
         }
@@ -298,7 +299,7 @@ public class TransformatorForLayers {
     }
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 40, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -334,6 +335,7 @@ public class TransformatorForLayers {
             }
         }
         double ratio = max_dist/min_dist;
+        breakRatio = ratio;
         System.out.println("Current breaking ratio = "+ratio);
     }
 
