@@ -27,7 +27,11 @@ public class ModelGraph extends MultiGraph {
 
     public LinkedList<FaceNode> debugFaces = new LinkedList<>();
 
-    //private static DecimalFormat df = new DecimalFormat("0.0000000");
+    public Map<String, InteriorNode> interiorNodesOld = new HashMap<>();
+
+    public List<InteriorNode> interiorNodesNew = new LinkedList<>();
+
+    public Integer falseEdgesCounter = 0;
 
     public ModelGraph(String id) {
         super(id);
@@ -122,6 +126,7 @@ public class ModelGraph extends MultiGraph {
         insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
         insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
+        falseEdgesCounter = falseEdgesCounter + 3;
         return faceNode;
     }
 
@@ -191,6 +196,8 @@ public class ModelGraph extends MultiGraph {
     public void deleteEdge(String edgeId){
         edges.remove(edgeId);
         this.removeEdge(edgeId);
+        if(edgeId.contains("I") || edgeId.contains("F"))
+            falseEdgesCounter -= 1;
     }
 
     public Optional<GraphEdge> getEdgeById(String id) {
@@ -453,6 +460,7 @@ public class ModelGraph extends MultiGraph {
         insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: orange;");
+        falseEdgesCounter = falseEdgesCounter + 4;
 
         return interiorNode;
     }
@@ -481,13 +489,36 @@ public class ModelGraph extends MultiGraph {
 
     }
 
+    //additional methods for calculate some statistics
+
+    public void setOldInteriorNodes(ModelGraph graph){
+        Map<String, InteriorNode> intNodesCopy = graph.interiorNodes.entrySet()
+                                .stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey,
+                                    Map.Entry::getValue));
+        interiorNodesOld = intNodesCopy;
+        interiorNodesNew.clear();
+    }
+
+    public boolean isInteriorNodeAddedInCurrentAlgStep(Quartet<Vertex, Vertex, Vertex, Vertex> newIntNodeVertices){
+        for(InteriorNode intNode: interiorNodesOld.values()){
+            if(checkSameVerticesInInteriorNode(newIntNodeVertices, intNode)) return false;
+        }
+        return true;
+    }
+
     //main method for InteriorNode
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
             List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
                 if( candSubGraph != null && !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
-                    insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+                    InteriorNode interiorNode = insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+                    if(isInteriorNodeAddedInCurrentAlgStep(candSubGraph)){
+                        interiorNode.setIsNewlyAdded(true);
+                        interiorNodesNew.add(interiorNode);
+                        //System.out.println("Was newly added = "+ interiorNode.getId());
+                    }
                 }
             }
         }

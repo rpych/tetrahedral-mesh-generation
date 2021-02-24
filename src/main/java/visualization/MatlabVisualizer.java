@@ -27,10 +27,10 @@ public class MatlabVisualizer{
     		writePlottingNodes(fileWriter);
     		writeNormalEdges(fileWriter);
     		writePlottingEdges(fileWriter, "red");
-    		writeFaceEdges(fileWriter);
-    		writePlottingEdges(fileWriter, "grey");
-			writeInteriorEdges(fileWriter);
-			writePlottingEdges(fileWriter, "green");
+    		//writeFaceEdges(fileWriter);
+    		//writePlottingEdges(fileWriter, "grey");
+			//writeInteriorEdges(fileWriter);
+			//writePlottingEdges(fileWriter, "green");
     		endFunctionDefinition(fileWriter);
     		fileWriter.close();
     	}catch(IOException e) {
@@ -55,14 +55,14 @@ public class MatlabVisualizer{
     		fileWriter.write("\t" + v.getXCoordinate() + " " + v.getYCoordinate() + " " + v.getZCoordinate() + "; ...\n");
     		this.nodesIDs.put(v.getId(), idx++);
     	}
-    	for(FaceNode n : this.graph.getFaces()) {
+    	for(FaceNode n : this.graph.debugFaces) { //this.graph.getFaces()
     		fileWriter.write("\t" + n.getXCoordinate() + " " + n.getYCoordinate() + " " + n.getZCoordinate() + "; ...\n");
     		this.nodesIDs.put(n.getId(), idx++);
     	}
-		for(InteriorNode in : this.graph.getInteriorNodes()) {
+		/*for(InteriorNode in : this.graph.getInteriorNodes()) {
 			fileWriter.write("\t" + in.getXCoordinate() + " " + in.getYCoordinate() + " " + in.getZCoordinate() + "; ...\n");
 			this.nodesIDs.put(in.getId(), idx++);
-		}
+		}*/
     	fileWriter.write("];\n\n");
     }
     

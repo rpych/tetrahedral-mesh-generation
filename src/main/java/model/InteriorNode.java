@@ -7,6 +7,7 @@ public class InteriorNode extends GraphNode{
 
     public static final String INTERIOR_SYMBOL = "I";
     private Quartet<Vertex, Vertex, Vertex, Vertex> quartet;
+    private boolean isNewlyAdded = false;
 
     public InteriorNode(AbstractGraph graph, String id, Coordinates coordinates) {
         super(graph, id, INTERIOR_SYMBOL, coordinates);
@@ -33,6 +34,14 @@ public class InteriorNode extends GraphNode{
 
     private static double getInteriorNodeZCoordinate(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         return (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate() + v4.getZCoordinate()) / 4d;
+    }
+
+    public void setIsNewlyAdded(boolean isNewlyAdded){
+        this.isNewlyAdded = isNewlyAdded;
+    }
+
+    public boolean getIsNewlyAdded(){
+        return isNewlyAdded;
     }
 
     public boolean containsFace(FaceNode face){

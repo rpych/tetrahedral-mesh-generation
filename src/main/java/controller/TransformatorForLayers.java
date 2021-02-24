@@ -3,20 +3,26 @@ package controller;
 import common.LFunction;
 import model.*;
 import org.javatuples.Pair;
+import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import visualization.MatlabVisualizer;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public double breakRatio;
-    static final double EPS = 0.00000001;
+    public Integer counter = 0;
+    FileWriter edgesRatioFileWriter;;
+    FileWriter anglesFileWriter;
 
     public TransformatorForLayers(ModelGraph graph) {
         this.graph = graph;
         hangingEdges = new Stack<GraphEdge>();
+        createFileWriters();
     }
 
     public ModelGraph transform() {
@@ -25,7 +31,7 @@ public class TransformatorForLayers {
 
     public ModelGraph transform(ModelGraph graph) {
         Optional<FaceNode> face = findFaceToBreak(graph);
-        int counter  = 0;
+        counter  = 0;
         while(face.isPresent()){
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
@@ -37,27 +43,195 @@ public class TransformatorForLayers {
                     System.out.println("Stack not empty but hanging node not found");
                     continue;
                 }
-                processLastHangingNode(graph, faceHN.get());
+                graph = processLastHangingNode(graph, faceHN.get());
                 graph = addNewFaces(graph);
             }
             graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph); //face on different layers
-            if(!checkAllFacesBelongToInteriorNode(graph)){
-                System.err.println("Some FACES do not belong to any interiorNode " + counter);
-            }else System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
 
-            if(isEnoughBreakingAccuracy(graph)) {
+            //breaking ratio checking
+            checkAdaptationProperties(graph);
+
+            if(counter % 20 == 0) {
+                if (!checkAllFacesBelongToInteriorNode(graph)) {
+                    System.err.println("Some FACES do not belong to any interiorNode " + counter);
+                } else
+                    System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
+                checkInteriorNodesMinMaxBreakingRatio(graph);
+                System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()-graph.falseEdgesCounter) +
+                        ", false edges = "+ graph.falseEdgesCounter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid18_01_60_" + counter);
+                matlabVisualizer.saveCode();
+            }
+            if (isEnoughBreakingAccuracy(graph)) {
                 System.out.println("ENOUGH accuracy met");
+                if (!checkAllFacesBelongToInteriorNode(graph)) {
+                    System.err.println("Some FACES do not belong to any interiorNode " + counter);
+                } else
+                    System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
+                System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size() - graph.falseEdgesCounter) +
+                        ", false edges = "+ graph.falseEdgesCounter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid18_01_60_" + counter);
+                matlabVisualizer.saveCode();
+                closeFiles();
                 break;
             }
             //checkFacesConnected(graph);
-            checkInteriorNodesMinMaxBreakingRatio(graph);
+
+
             //if(counter == 180) break;
         }
         return graph;
     }
 
+    public void createFileWriters() {
+        try {
+            edgesRatioFileWriter = new FileWriter("edgesRatio60.txt");
+            anglesFileWriter = new FileWriter("angles60.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void writeToEdgeRatioFileWriter(String data){
+        try {
+            edgesRatioFileWriter.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void writeToAnglesFileWriter(String data){
+        try {
+            anglesFileWriter.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void closeFiles(){
+        try {
+            edgesRatioFileWriter.close();
+            anglesFileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void checkAdaptationProperties(ModelGraph graph){
+        checkInteriorNodesEdgesLenRatio(graph);
+        checkAnglesBetweenEdgesInInteriorNode(graph);
+    }
+
+
+    public void checkInteriorNodesEdgesLenRatio(ModelGraph graph){
+        List<InteriorNode> interiorNodes = graph.interiorNodesNew;
+        for(InteriorNode node: interiorNodes){
+            Map<GraphEdge, Double> edges = new HashMap<>();
+            LinkedHashMap<GraphEdge, Double> sortedMap = new LinkedHashMap<>();
+            Quartet<Vertex, Vertex, Vertex, Vertex> intNodeVertices = node.getQuartet();
+            GraphEdge e1 = graph.getEdgeBetweenNodes(intNodeVertices.getValue0(), intNodeVertices.getValue1()).get();
+            edges.put(e1, Coordinates.distance(e1.getEdgeNodes().getValue0().getCoordinates(),
+                    e1.getEdgeNodes().getValue1().getCoordinates()));
+
+            GraphEdge e2 = graph.getEdgeBetweenNodes(intNodeVertices.getValue0(), intNodeVertices.getValue2()).get();
+            edges.put(e2, Coordinates.distance(e2.getEdgeNodes().getValue0().getCoordinates(),
+                    e2.getEdgeNodes().getValue1().getCoordinates()));
+
+            GraphEdge e3 = graph.getEdgeBetweenNodes(intNodeVertices.getValue0(), intNodeVertices.getValue3()).get();
+            edges.put(e3, Coordinates.distance(e3.getEdgeNodes().getValue0().getCoordinates(),
+                    e3.getEdgeNodes().getValue1().getCoordinates()));
+
+            GraphEdge e4 = graph.getEdgeBetweenNodes(intNodeVertices.getValue1(), intNodeVertices.getValue2()).get();
+            edges.put(e4, Coordinates.distance(e4.getEdgeNodes().getValue0().getCoordinates(),
+                    e4.getEdgeNodes().getValue1().getCoordinates()));
+
+            GraphEdge e5 = graph.getEdgeBetweenNodes(intNodeVertices.getValue1(), intNodeVertices.getValue3()).get();
+            edges.put(e5, Coordinates.distance(e5.getEdgeNodes().getValue0().getCoordinates(),
+                    e5.getEdgeNodes().getValue1().getCoordinates()));
+
+            GraphEdge e6 = graph.getEdgeBetweenNodes(intNodeVertices.getValue2(), intNodeVertices.getValue3()).get();
+            edges.put(e6, Coordinates.distance(e6.getEdgeNodes().getValue0().getCoordinates(),
+                    e6.getEdgeNodes().getValue1().getCoordinates()));
+
+            edges.entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+
+            Double ovsum = 0.0,  threeLongestSum = 0.0;
+            int c = 0;
+            for(Double len: sortedMap.values()){
+                ovsum += len;
+                if(c<3){
+                    threeLongestSum += len;
+                }
+                c++;
+                //System.out.println("Sorted edges "+node.getId() +", len = "+ len);
+            }
+            double ratio = (threeLongestSum/ovsum);
+            writeToEdgeRatioFileWriter(counter+";"+node.getId()+";"+ratio+"\n");
+            System.out.println("Edge Ratio = "+ ratio);
+        }
+    }
+
+    public void checkAnglesBetweenEdgesInInteriorNode(ModelGraph graph){
+        List<InteriorNode> interiorNodes = graph.interiorNodesNew;
+        for(InteriorNode node: interiorNodes){
+            List<Triplet<Vertex, Vertex, Vertex>> facesVertices = new LinkedList<>();
+            Quartet<Vertex, Vertex, Vertex, Vertex> quartet = node.getQuartet();
+            facesVertices.add(new Triplet<>(quartet.getValue0(), quartet.getValue1(), quartet.getValue2()));
+            facesVertices.add(new Triplet<>(quartet.getValue0(), quartet.getValue1(), quartet.getValue3()));
+            facesVertices.add(new Triplet<>(quartet.getValue0(), quartet.getValue2(), quartet.getValue3()));
+            facesVertices.add(new Triplet<>(quartet.getValue1(), quartet.getValue2(), quartet.getValue3()));
+            Double minAngle = 181.0;
+            for(Triplet<Vertex, Vertex, Vertex> faceVert: facesVertices){
+                Double angle = getMinAngleBetweenFaceEdges(faceVert);
+                if(angle < minAngle) minAngle = angle;
+            }
+            writeToAnglesFileWriter(counter+";"+node.getId()+";"+minAngle+"\n");
+            System.out.println("Min angle in interiorNode = "+ minAngle);
+
+        }
+    }
+
+    public Double getMinAngleBetweenFaceEdges(Triplet<Vertex, Vertex, Vertex> faceVert){
+
+        Double angle1 = calcAngle(faceVert.getValue0(), faceVert.getValue1(), faceVert.getValue2());
+        Double angle2 = calcAngle(faceVert.getValue1(), faceVert.getValue0(), faceVert.getValue2());
+        Double angle3 = calcAngle(faceVert.getValue2(), faceVert.getValue0(), faceVert.getValue1());
+
+        //System.out.println("Angle1 = "+angle1 + ", angle2 = "+ angle2 + ", angle3 = "+ angle3);
+
+        return Math.min(angle1, Math.min(angle2, angle3));
+    }
+
+    public Double calcAngle(Vertex commonVert, Vertex a, Vertex b){
+        Double deltaAX = (a.getXCoordinate() - commonVert.getXCoordinate());
+        Double deltaBX = (b.getXCoordinate() - commonVert.getXCoordinate());
+
+        Double deltaAY = (a.getYCoordinate() - commonVert.getYCoordinate());
+        Double deltaBY = (b.getYCoordinate() - commonVert.getYCoordinate());
+
+        Double deltaAZ = (a.getZCoordinate() - commonVert.getZCoordinate());
+        Double deltaBZ = (b.getZCoordinate() - commonVert.getZCoordinate());
+
+        Double aLen = Coordinates.distance(a.getCoordinates(), commonVert.getCoordinates());
+        Double bLen = Coordinates.distance(b.getCoordinates(), commonVert.getCoordinates());
+
+        double scalarProduct = (deltaAX * deltaBX) + (deltaAY * deltaBY) + (deltaAZ * deltaBZ);
+        double cosine = scalarProduct / (aLen * bLen);
+
+        double angle = Math.acos(cosine);
+        double angleInDegrees = (angle/Math.PI) * 180;
+
+        //System.out.println("AngleRad = "+angle + ", angleInDegrees = "+ angleInDegrees);
+        return  angleInDegrees;
+    }
 
 
     public boolean checkAllFacesBelongToInteriorNode(ModelGraph graph){
@@ -285,7 +459,9 @@ public class TransformatorForLayers {
     //InteriorNode part
 
     public ModelGraph createNewInteriorNodes(){
+        graph.setOldInteriorNodes(graph); //ugly code
         graph.clearInteriorNodes();
+        //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
         return graph.createInteriorNodesForNewlyFoundSubGraphs();
     }
 
@@ -299,7 +475,7 @@ public class TransformatorForLayers {
     }
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 40, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 60, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -310,6 +486,7 @@ public class TransformatorForLayers {
                 return true;
             }
         }
+        System.out.println("Intermediate threshold = "+ numOfIntNodesBelowThreshIntermed + ", Low threshold = "+ numOfIntNodesBelowThreshLow);
         return false;
     }
 
