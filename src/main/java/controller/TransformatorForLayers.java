@@ -5,24 +5,29 @@ import model.*;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
+import parallel.TetrahedraGenerator;
 import visualization.MatlabVisualizer;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public double breakRatio;
     public Integer counter = 0;
+    TetrahedraGenManager tetGenManager;
     FileWriter edgesRatioFileWriter;;
     FileWriter anglesFileWriter;
 
     public TransformatorForLayers(ModelGraph graph) {
         this.graph = graph;
         hangingEdges = new Stack<GraphEdge>();
-        createFileWriters();
+        //createFileWriters();
+        tetGenManager = new TetrahedraGenManager();
     }
 
     public ModelGraph transform() {
@@ -51,7 +56,7 @@ public class TransformatorForLayers {
             face = findFaceToBreak(graph); //face on different layers
 
             //breaking ratio checking
-            checkAdaptationProperties(graph);
+            //checkAdaptationProperties(graph);
 
             if(counter % 20 == 0) {
                 if (!checkAllFacesBelongToInteriorNode(graph)) {
@@ -62,7 +67,7 @@ public class TransformatorForLayers {
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()-graph.falseEdgesCounter) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid18_01_60_" + counter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid06_03_20_" + counter);
                 matlabVisualizer.saveCode();
             }
             if (isEnoughBreakingAccuracy(graph)) {
@@ -74,7 +79,7 @@ public class TransformatorForLayers {
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size() - graph.falseEdgesCounter) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid18_01_60_" + counter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid06_03_20_" + counter);
                 matlabVisualizer.saveCode();
                 closeFiles();
                 break;
@@ -459,10 +464,12 @@ public class TransformatorForLayers {
     //InteriorNode part
 
     public ModelGraph createNewInteriorNodes(){
-        graph.setOldInteriorNodes(graph); //ugly code
+        //graph.setOldInteriorNodes(graph); //ugly code
         graph.clearInteriorNodes();
         //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
-        return graph.createInteriorNodesForNewlyFoundSubGraphs();
+        //return graph.createInteriorNodesForNewlyFoundSubGraphs();
+        tetGenManager.createTasksForThreadPool(graph.getFacesNum());
+        return graph;
     }
 
     //checks
@@ -475,7 +482,7 @@ public class TransformatorForLayers {
     }
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 60, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -546,6 +553,24 @@ public class TransformatorForLayers {
             return new Triplet<>(node.getQuartet().getValue0(), node.getQuartet().getValue1(), node.getQuartet().getValue3());
         }
         return new Triplet<>(node.getQuartet().getValue0(), node.getQuartet().getValue1(), node.getQuartet().getValue2());
+    }
+
+    //inner class
+    private class TetrahedraGenManager{
+        final Integer POOL_SIZE = 6;
+        ExecutorService service = Executors.newFixedThreadPool(POOL_SIZE);
+
+        private void createTasksForThreadPool(Integer facesCollectionSize){
+            int facesPerThread = facesCollectionSize / POOL_SIZE;
+            if(facesPerThread < 20){
+                service.submit(new TetrahedraGenerator(graph, 1, facesCollectionSize));
+            }
+            else{
+                for(int i=0; i<POOL_SIZE; ++i){
+                    service.submit(new TetrahedraGenerator(graph, (facesPerThread*i + 1), facesPerThread));
+                }
+            }
+        }
     }
 
 }

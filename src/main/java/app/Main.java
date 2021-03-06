@@ -28,7 +28,7 @@ public class Main {
         ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
         TransformatorForLayers transformator3 = new TransformatorForLayers(cuboid);
         cuboid = transformator3.transform();
-        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCuboid_18_01_60");
+        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCuboid_06_03_20");
         matlabVisualizer3.saveCode();
 
         /*ModelGraph tetrahedra2 = generateTetrahedra();

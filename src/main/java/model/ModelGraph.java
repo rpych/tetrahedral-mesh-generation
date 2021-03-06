@@ -13,21 +13,23 @@ import org.javatuples.Triplet;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 public class ModelGraph extends MultiGraph {
 
-    private Map<String, Vertex> vertices = new HashMap<>();
+    private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
 
-    private Map<String, FaceNode> faces = new HashMap<>();
+    private Map<String, FaceNode> faces = new ConcurrentSkipListMap<>();
 
-    private Map<String, GraphEdge> edges = new HashMap<>();
+    private Map<String, GraphEdge> edges = new ConcurrentSkipListMap<>();
 
-    private Map<String, InteriorNode> interiorNodes = new HashMap<>();
+    private Map<String, InteriorNode> interiorNodes = new ConcurrentSkipListMap<>();
 
-    public LinkedList<FaceNode> debugFaces = new LinkedList<>();
+    public List<FaceNode> debugFaces = new LinkedList<>();
 
-    public Map<String, InteriorNode> interiorNodesOld = new HashMap<>();
+    public Map<String, InteriorNode> interiorNodesOld = new ConcurrentSkipListMap<>();
 
     public List<InteriorNode> interiorNodesNew = new LinkedList<>();
 
@@ -252,6 +254,10 @@ public class ModelGraph extends MultiGraph {
         return vertices.values();
     }
 
+    public Map<String, Vertex> getVerticesMap() {
+        return vertices;
+    }
+
     public int getVerticesNum() { return vertices.size(); }
 
     public int getEdgesNum() { return edges.size(); }
@@ -429,6 +435,8 @@ public class ModelGraph extends MultiGraph {
 
     public Collection<InteriorNode> getInteriorNodes() { return interiorNodes.values(); }
 
+    public Map<String, InteriorNode> getInteriorNodesMap() { return interiorNodes; }
+
     public void clearInteriorNodes(){
         List<String> interiorNodesKeysCopy = new LinkedList<>(interiorNodes.keySet());
         for(String interiorId: interiorNodesKeysCopy){
@@ -475,7 +483,7 @@ public class ModelGraph extends MultiGraph {
         this.removeNode(id);
     }
 
-    private boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
+    public boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
         Quartet<Vertex, Vertex, Vertex, Vertex> quartetNode = intNode.getQuartet();
 
         return (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
@@ -491,14 +499,14 @@ public class ModelGraph extends MultiGraph {
 
     //additional methods for calculate some statistics
 
-    public void setOldInteriorNodes(ModelGraph graph){
-        Map<String, InteriorNode> intNodesCopy = graph.interiorNodes.entrySet()
+    /*public void setOldInteriorNodes(ModelGraph graph){
+        ConcurrentMap<String, InteriorNode> intNodesCopy = graph.interiorNodes.entrySet()
                                 .stream()
                                 .collect(Collectors.toMap(Map.Entry::getKey,
                                     Map.Entry::getValue));
         interiorNodesOld = intNodesCopy;
         interiorNodesNew.clear();
-    }
+    }*/
 
     public boolean isInteriorNodeAddedInCurrentAlgStep(Quartet<Vertex, Vertex, Vertex, Vertex> newIntNodeVertices){
         for(InteriorNode intNode: interiorNodesOld.values()){
@@ -508,7 +516,7 @@ public class ModelGraph extends MultiGraph {
     }
 
     //main method for InteriorNode
-    public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
+    /*public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
             List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
@@ -585,5 +593,5 @@ public class ModelGraph extends MultiGraph {
         }
         return topVertices;
     }
-
+*/
 }

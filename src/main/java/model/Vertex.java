@@ -5,7 +5,9 @@ import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.AbstractGraph;
 import org.graphstream.graph.implementations.AbstractNode;
 
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 
 public class Vertex extends GraphNode {
 
@@ -67,7 +69,8 @@ public class Vertex extends GraphNode {
      */
     @Override
     public <T extends Edge> T getEdgeBetween(Node node) {
-        for(AbstractNode e : this.neighborMap.keySet()){
+        Set<AbstractNode> abstractNodes = Collections.synchronizedSet(this.neighborMap.keySet());
+        for(AbstractNode e : abstractNodes){
             if(Objects.equals(e.getId(), node.getId())){
                 return super.getEdgeBetween(e);
             }

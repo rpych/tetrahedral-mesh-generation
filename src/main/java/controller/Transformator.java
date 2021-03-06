@@ -268,6 +268,7 @@ public class Transformator implements ITransformator{
 	public ModelGraph createNewInteriorNodes(){
 		String initialIntNodeName = graph.getInteriorNodes().iterator().next().getId(); //first and only entry in Map so far
 		graph.removeInteriorNode(initialIntNodeName);
-		return graph.createInteriorNodesForNewlyFoundSubGraphs();
+		//return graph.createInteriorNodesForNewlyFoundSubGraphs();
+		return graph;
 	}
 }
