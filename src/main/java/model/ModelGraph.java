@@ -2,22 +2,20 @@ package model;
 
 import common.ElementAttributes;
 import common.IdFormatter;
-import org.graphstream.graph.Edge;
-import org.graphstream.graph.Element;
-import org.graphstream.graph.Node;
+//import org.graphstream.graph.Edge;
+//import org.graphstream.graph.Element;
+//import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
-public class ModelGraph extends MultiGraph {
+public class ModelGraph extends Graph { //extends MultiGraph
 
     private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
 
@@ -48,14 +46,14 @@ public class ModelGraph extends MultiGraph {
     }
 
     public Optional<GraphEdge> getEdgeBetweenNodes(Vertex v1, Vertex v2) {
-        Optional<Edge> edge = Optional.ofNullable(v1.getEdgeBetween(v2));
-        return edge.map(Element::getId).flatMap(this::getEdgeById);
+        Optional<GraphEdge> edge = Optional.ofNullable(v1.getEdgeBetween(v2));
+        return edge.map(GraphEdge::getId).flatMap(this::getEdgeById); //Element
     }
 
     public Vertex insertVertex(Vertex vertex) {
-        Node node = this.addNode(vertex.getId());
+        /*Node node = this.addNode(vertex.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, vertex.getXCoordinate(), vertex.getYCoordinate(), vertex.getZCoordinate());
+        node.setAttribute(ElementAttributes.XYZ, vertex.getXCoordinate(), vertex.getYCoordinate(), vertex.getZCoordinate());*/
         vertices.put(vertex.getId(), vertex);
         return vertex;
     }
@@ -98,17 +96,17 @@ public class ModelGraph extends MultiGraph {
             edges.values().stream()
                     .filter(graphEdge -> graphEdge.getEdgeNodes().contains(vertex))
                     .map(GraphEdge::getId)
-                    .forEach(this::removeEdge);
+                    .forEach(this::deleteEdge);
             return Optional.of(vertex);
         }
         return Optional.empty();
     }
 
     public FaceNode insertFace(FaceNode faceNode) {
-        Node node = this.addNode(faceNode.getId());
+        /*Node node = this.addNode(faceNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, faceNode.getXCoordinate(), faceNode.getYCoordinate(), faceNode.getZCoordinate());
-        node.addAttribute("ui.style", "fill-color: red;");
+        node.addAttribute("ui.style", "fill-color: red;");*/
         faces.put(id, faceNode);
         return faceNode;
     }
@@ -120,14 +118,14 @@ public class ModelGraph extends MultiGraph {
 
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
         FaceNode faceNode = new FaceNode(this, id, v1, v2, v3);
-        Node node = this.addNode(faceNode.getId());
+        /*Node node = this.addNode(faceNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
         node.setAttribute(ElementAttributes.XYZ, faceNode.getXCoordinate(), faceNode.getYCoordinate(), faceNode.getZCoordinate());
-        node.addAttribute("ui.class", "important");
+        node.addAttribute("ui.class", "important");*/
         faces.put(id, faceNode);
-        insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
-        insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
-        insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
+        //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
+        //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
+        //insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
         falseEdgesCounter = falseEdgesCounter + 3;
         return faceNode;
     }
@@ -154,7 +152,7 @@ public class ModelGraph extends MultiGraph {
                 .collect(Collectors.toList());
         edgesToRemove.forEach(this::deleteEdge);
         faces.remove(id);
-        this.removeNode(id);
+        //this.removeNode(id);
     }
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border) {
@@ -176,28 +174,35 @@ public class ModelGraph extends MultiGraph {
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border, String uiStyle) {
         GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2, border).build();
-        Edge edge = this.addEdge(graphEdge.getId(), n1, n2);
+        /*Edge edge = this.addEdge(graphEdge.getId(), n1, n2);
         if (uiStyle != null) {
             edge.addAttribute("ui.style", uiStyle);
-        }
-        edges.put(graphEdge.getId(), graphEdge);
-        return graphEdge;
+        }*/
+        /*edges.put(graphEdge.getId(), graphEdge);
+        return graphEdge;*/
+        return insertEdge(graphEdge);
     }
 
     public GraphEdge insertEdge(GraphEdge graphEdge) {
-        Edge edge = this.addEdge(graphEdge.getId(), graphEdge.getNode0().getId(), graphEdge.getNode1().getId());
+        //Edge edge = this.addEdge(graphEdge.getId(), graphEdge.getNode0().getId(), graphEdge.getNode1().getId());
+        /*System.out.println("EDGE in NEIGHBOUR MAP = "+ graphEdge.getEdgeNodes().toString() + ", Node 0 = "+ graphEdge.getEdgeNodes().getValue0().toString()+
+                ", Node 1 = "+ graphEdge.getEdgeNodes().getValue1().toString());*/
+        graphEdge.getEdgeNodes().getValue0().addNeighbourEdge(graphEdge);
+        graphEdge.getEdgeNodes().getValue1().addNeighbourEdge(graphEdge);
         edges.put(graphEdge.getId(), graphEdge);
         return graphEdge;
     }
 
     public void deleteEdge(GraphNode n1, GraphNode n2) {
-        Edge edge = n1.getEdgeBetween(n2);
+        GraphEdge edge = n1.getEdgeBetween(n2);
         deleteEdge(edge.getId());
     }
 
     public void deleteEdge(String edgeId){
-        edges.remove(edgeId);
-        this.removeEdge(edgeId);
+        GraphEdge graphEdge = edges.remove(edgeId);
+        //this.removeEdge(edgeId);
+        graphEdge.getEdgeNodes().getValue0().removeNeighbourEdge(graphEdge);
+        graphEdge.getEdgeNodes().getValue1().removeNeighbourEdge(graphEdge);
         if(edgeId.contains("I") || edgeId.contains("F"))
             falseEdgesCounter -= 1;
     }
@@ -289,10 +294,6 @@ public class ModelGraph extends MultiGraph {
     public Optional<GraphEdge> getEdge(Vertex v1, Vertex v2) {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
-    
-    /*public boolean (Vertex v1, Vertex v2) {
-    	return null != v1.getEdgeBetween(v2);
-    }*/
 
     public boolean isEdgeBetween(GraphNode v1, GraphNode v2) {
         return null != v1.getEdgeBetween(v2);
@@ -445,9 +446,9 @@ public class ModelGraph extends MultiGraph {
     }
 
     public InteriorNode insertInteriorNode(InteriorNode interiorNode) {
-        Node node = this.addNode(interiorNode.getId());
+        /*Node node = this.addNode(interiorNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
+        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());*/
         interiorNodes.put(interiorNode.getId(), interiorNode);
         return interiorNode;
     }
@@ -459,15 +460,15 @@ public class ModelGraph extends MultiGraph {
 
     public InteriorNode insertInteriorNode(String interiorNodeName, Vertex v1, Vertex v2, Vertex v3, Vertex v4, String uiStyle){
         InteriorNode interiorNode = new InteriorNode(this, interiorNodeName, v1, v2, v3, v4);
-        Node node = this.addNode(interiorNode.getId());
+        /*Node node = this.addNode(interiorNode.getId());
         node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());
+        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());*/
         interiorNodes.put(interiorNodeName, interiorNode);
 
-        insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: orange;");
+        /*insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: orange;");
-        insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: orange;");
+        insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: orange;");*/
         falseEdgesCounter = falseEdgesCounter + 4;
 
         return interiorNode;
@@ -480,7 +481,7 @@ public class ModelGraph extends MultiGraph {
                 .collect(Collectors.toList());
         edgesToRemove.forEach(this::deleteEdge);
         interiorNodes.remove(id);
-        this.removeNode(id);
+        //this.removeNode(id);
     }
 
     public boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
@@ -516,7 +517,7 @@ public class ModelGraph extends MultiGraph {
     }
 
     //main method for InteriorNode
-    /*public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
+    public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
             List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
@@ -593,5 +594,5 @@ public class ModelGraph extends MultiGraph {
         }
         return topVertices;
     }
-*/
+
 }

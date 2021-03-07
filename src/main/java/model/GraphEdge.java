@@ -3,14 +3,17 @@ package model;
 import org.graphstream.graph.implementations.AbstractEdge;
 import org.javatuples.Pair;
 
-public class GraphEdge extends AbstractEdge {
+public class GraphEdge { //extends AbstractEdge
 
     private final Pair<GraphNode, GraphNode> edgeNodes;
 
     private boolean border;
 
+    private String id;
+
     public GraphEdge(String id, Pair<GraphNode, GraphNode> edgeNodes, boolean border) {
-        super(id, edgeNodes.getValue0(), edgeNodes.getValue1(), false);
+        //super(id, edgeNodes.getValue0(), edgeNodes.getValue1(), false);
+        this.id = id;
         this.edgeNodes = edgeNodes;
         this.border = border;
     }
@@ -43,6 +46,22 @@ public class GraphEdge extends AbstractEdge {
     		return new Pair<Vertex, Vertex>((Vertex)edgeNodes.getValue0(), (Vertex)edgeNodes.getValue1());
     	}
     	throw new IllegalArgumentException("Some GraphNode of edge is not a Vertex!");
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public GraphNode getNode0(){
+        return edgeNodes.getValue0();
+    }
+
+    public GraphNode getNode1(){
+        return edgeNodes.getValue1();
     }
     
     public static class GraphEdgeBuilder {

@@ -1,6 +1,6 @@
 package model;
 
-import org.graphstream.graph.implementations.AbstractGraph;
+//import org.graphstream.graph.implementations.AbstractGraph;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -14,11 +14,11 @@ public class FaceNode extends GraphNode {
 
     private boolean R;
 
-    public FaceNode(AbstractGraph graph, String id, Coordinates coordinates) {
+    public FaceNode(ModelGraph graph, String id, Coordinates coordinates) {
         super(graph, id, FACE_SYMBOL, coordinates);
     }
 
-    public FaceNode(AbstractGraph graph, String id, Vertex v1, Vertex v2, Vertex v3) {
+    public FaceNode(ModelGraph graph, String id, Vertex v1, Vertex v2, Vertex v3) {
         super(graph, id, FACE_SYMBOL, getFacePosition(v1, v2, v3));
         triangle = new Triplet<>(v1, v2, v3);
         R = false;

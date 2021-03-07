@@ -13,13 +13,14 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public double breakRatio;
     public Integer counter = 0;
-    TetrahedraGenManager tetGenManager;
+    //TetrahedraGenManager tetGenManager;
     FileWriter edgesRatioFileWriter;;
     FileWriter anglesFileWriter;
 
@@ -27,7 +28,7 @@ public class TransformatorForLayers {
         this.graph = graph;
         hangingEdges = new Stack<GraphEdge>();
         //createFileWriters();
-        tetGenManager = new TetrahedraGenManager();
+        //tetGenManager = new TetrahedraGenManager();
     }
 
     public ModelGraph transform() {
@@ -67,7 +68,7 @@ public class TransformatorForLayers {
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()-graph.falseEdgesCounter) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid06_03_20_" + counter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid07_03_20_" + counter);
                 matlabVisualizer.saveCode();
             }
             if (isEnoughBreakingAccuracy(graph)) {
@@ -79,9 +80,9 @@ public class TransformatorForLayers {
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size() - graph.falseEdgesCounter) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid06_03_20_" + counter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid07_03_20_" + counter);
                 matlabVisualizer.saveCode();
-                closeFiles();
+                //closeFiles();
                 break;
             }
             //checkFacesConnected(graph);
@@ -467,9 +468,9 @@ public class TransformatorForLayers {
         //graph.setOldInteriorNodes(graph); //ugly code
         graph.clearInteriorNodes();
         //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
-        //return graph.createInteriorNodesForNewlyFoundSubGraphs();
-        tetGenManager.createTasksForThreadPool(graph.getFacesNum());
-        return graph;
+        return graph.createInteriorNodesForNewlyFoundSubGraphs();
+        //tetGenManager.createTasksForThreadPool(graph.getFacesNum());
+        //return graph;
     }
 
     //checks
@@ -569,6 +570,15 @@ public class TransformatorForLayers {
                 for(int i=0; i<POOL_SIZE; ++i){
                     service.submit(new TetrahedraGenerator(graph, (facesPerThread*i + 1), facesPerThread));
                 }
+            }
+
+            service.shutdown();
+            try {
+                if (!service.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
+                    service.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                service.shutdownNow();
             }
         }
     }

@@ -4,26 +4,43 @@ import common.ElementAttributes;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.graphstream.graph.implementations.AbstractGraph;
-import org.graphstream.graph.implementations.SingleNode;
+//import org.graphstream.graph.implementations.AbstractGraph;
+//import org.graphstream.graph.implementations.AbstractNode;
+//import org.graphstream.graph.implementations.SingleNode;
 import org.javatuples.Pair;
 
-public abstract class GraphNode extends SingleNode {
+public abstract class GraphNode { //extends SingleNode
 
     private final String symbol;
 
     private Coordinates coordinates;
 
-    protected GraphNode(AbstractGraph graph, String id, String symbol, double xCoordinate, double yCoordinate, double zCoordinate) {
-        this(graph, id, symbol, new Coordinates(xCoordinate, yCoordinate, zCoordinate));
+    protected String id;
+
+    protected ConcurrentLinkedDeque<GraphEdge> neighborEdgeList;
+
+    protected GraphNode(Graph graph, String id, String symbol, double xCoordinate, double yCoordinate, double zCoordinate) {
+        //this(graph, id, symbol, new Coordinates(xCoordinate, yCoordinate, zCoordinate));
+        this.id = id;
+        this.symbol = symbol;
+        this.coordinates = new Coordinates(xCoordinate, yCoordinate, zCoordinate);
+        this.neighborEdgeList = new ConcurrentLinkedDeque<>();
     }
 
-    protected GraphNode(AbstractGraph graph, String id, String symbol, Coordinates coordinates) {
-        super(graph, id);
-        super.setAttribute(ElementAttributes.FROZEN_LAYOUT);
+    protected GraphNode(Graph graph, String id, String symbol, Coordinates coordinates) {
+        /*super(graph, id);
+        super.setAttribute(ElementAttributes.FROZEN_LAYOUT);*/
+        this.id = id;
         this.symbol = symbol;
         this.coordinates = coordinates;
+        this.neighborEdgeList = new ConcurrentLinkedDeque<>();
     }
 
     public void rotate() {
@@ -45,9 +62,42 @@ public abstract class GraphNode extends SingleNode {
     public Coordinates getCoordinates(){
         return  coordinates;
     }
-    
 
-	public Collection<GraphNode> getAdjacentNodes(ModelGraph graph){
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void addNeighbourEdge(GraphEdge edge){
+        if( !neighborEdgeList.contains(edge) ){
+            this.neighborEdgeList.add(edge);
+        }
+    }
+
+    public void removeNeighbourEdge(GraphEdge edge){
+        if( neighborEdgeList.contains(edge) ){
+            this.neighborEdgeList.remove(edge);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GraphNode graphNode = (GraphNode) o;
+        return symbol.equals(graphNode.symbol) &&
+                id.equals(graphNode.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(symbol, id);
+    }
+
+    public Collection<GraphNode> getAdjacentNodes(ModelGraph graph){
 		Collection<GraphNode> nodes = new ArrayList<GraphNode>();
 		Collection<GraphEdge> edges = graph.getEdges(this);
 		for(GraphEdge edge : edges) {
@@ -60,4 +110,18 @@ public abstract class GraphNode extends SingleNode {
 		}
 		return nodes;
 	}
+
+    public GraphEdge getEdgeBetween(GraphNode node) {
+        for(GraphEdge e : this.neighborEdgeList){
+            if((e.getEdgeNodes().getValue0().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue1().getId())) ||
+                    (e.getEdgeNodes().getValue1().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue0().getId()))){
+                return e;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasEdgeBetween(GraphNode node){
+        return getEdgeBetween(node) != null;
+    }
 }

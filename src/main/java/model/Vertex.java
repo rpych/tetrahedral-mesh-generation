@@ -1,9 +1,9 @@
 package model;
 
-import org.graphstream.graph.Edge;
-import org.graphstream.graph.Node;
-import org.graphstream.graph.implementations.AbstractGraph;
-import org.graphstream.graph.implementations.AbstractNode;
+//import org.graphstream.graph.Edge;
+//import org.graphstream.graph.Node;
+//import org.graphstream.graph.implementations.AbstractGraph;
+//import org.graphstream.graph.implementations.AbstractNode;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -13,13 +13,13 @@ public class Vertex extends GraphNode {
 
     private static final String VERTEX_SYMBOL = "V";
 
-    public Vertex(AbstractGraph graph, String id, Coordinates coordinates) {
+    public Vertex(Graph graph, String id, Coordinates coordinates) {
         super(graph, id, VERTEX_SYMBOL, coordinates);
     }
 
     public static class VertexBuilder {
 
-        private final AbstractGraph graph;
+        private final ModelGraph graph;
 
         private final String id;
 
@@ -29,7 +29,7 @@ public class Vertex extends GraphNode {
 
         private double zCoordinate;
 
-        public VertexBuilder(AbstractGraph graph, String id) {
+        public VertexBuilder(ModelGraph graph, String id) {
             this.graph = graph;
             this.id = id;
         }
@@ -61,20 +61,4 @@ public class Vertex extends GraphNode {
         }
     }
 
-    /*
-    I am kind of sorry for this but THE MIGHTY api that library exposes
-    doesn't allow to override a default java hashcode method used to identify
-    objects in neighborMap. So firstly we need to find and retrieve object
-    with given properties and then run this function again with 'correct' reference.
-     */
-    @Override
-    public <T extends Edge> T getEdgeBetween(Node node) {
-        Set<AbstractNode> abstractNodes = Collections.synchronizedSet(this.neighborMap.keySet());
-        for(AbstractNode e : abstractNodes){
-            if(Objects.equals(e.getId(), node.getId())){
-                return super.getEdgeBetween(e);
-            }
-        }
-        return null;
-    }
 }

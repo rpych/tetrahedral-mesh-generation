@@ -1,6 +1,6 @@
 package model;
 
-import org.graphstream.graph.implementations.AbstractGraph;
+//import org.graphstream.graph.implementations.AbstractGraph;
 import org.javatuples.Quartet;
 
 public class InteriorNode extends GraphNode{
@@ -9,11 +9,11 @@ public class InteriorNode extends GraphNode{
     private Quartet<Vertex, Vertex, Vertex, Vertex> quartet;
     private boolean isNewlyAdded = false;
 
-    public InteriorNode(AbstractGraph graph, String id, Coordinates coordinates) {
+    public InteriorNode(Graph graph, String id, Coordinates coordinates) {
         super(graph, id, INTERIOR_SYMBOL, coordinates);
     }
 
-    public InteriorNode(AbstractGraph graph, String id, Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
+    public InteriorNode(Graph graph, String id, Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
         super(graph, id, INTERIOR_SYMBOL, getInteriorNodePosition(v1, v2, v3, v4));
         quartet = new Quartet<>(v1, v2, v3, v4);
     }
