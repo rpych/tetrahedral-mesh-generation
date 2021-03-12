@@ -1,8 +1,6 @@
 package parallel;
 
-import common.ElementAttributes;
 import model.*;
-import org.graphstream.graph.Node;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
@@ -10,10 +8,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
+import java.util.concurrent.Callable;
 
-public class TetrahedraGenerator implements Runnable {
+public class TetrahedraGenerator implements Callable<Integer> { //Runnable
 
     ModelGraph graph;
     public Integer startFaceIdx;
@@ -27,8 +24,9 @@ public class TetrahedraGenerator implements Runnable {
     }
 
     @Override
-    public void run(){
+    public Integer call(){
         createInteriorNodesForNewlyFoundSubGraphs();
+        return 0;
     }
 
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
@@ -36,7 +34,7 @@ public class TetrahedraGenerator implements Runnable {
         for(FaceNode face: graph.getFaces() ){
             counter++;
             if(counter < startFaceIdx || counter >= startFaceIdx + facesNumToCheck) continue;
-            List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
+            List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
                 if( candSubGraph != null && !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
                     InteriorNode interiorNode = graph.insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
