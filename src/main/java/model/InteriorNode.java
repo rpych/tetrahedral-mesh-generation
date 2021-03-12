@@ -3,6 +3,8 @@ package model;
 //import org.graphstream.graph.implementations.AbstractGraph;
 import org.javatuples.Quartet;
 
+import static common.Utils.isVertexSameAs;
+
 public class InteriorNode extends GraphNode{
 
     public static final String INTERIOR_SYMBOL = "I";
@@ -40,8 +42,22 @@ public class InteriorNode extends GraphNode{
         this.isNewlyAdded = isNewlyAdded;
     }
 
-    public boolean getIsNewlyAdded(){
+    public boolean isNewlyAdded(){
         return isNewlyAdded;
+    }
+
+    public boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph){
+        Quartet<Vertex, Vertex, Vertex, Vertex> quartetNode = this.getQuartet();
+
+        return (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
+                isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue3())) &&
+                (isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue1()) ||
+                        isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue3())) &&
+                (isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue1()) ||
+                        isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue3())) &&
+                (isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue1()) ||
+                        isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue3()));
+
     }
 
     public boolean containsFace(FaceNode face){

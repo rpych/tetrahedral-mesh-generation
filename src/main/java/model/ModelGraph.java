@@ -19,11 +19,9 @@ public class ModelGraph extends Graph {
 
     private Map<String, InteriorNode> interiorNodes = new ConcurrentSkipListMap<>();
 
+    private Map<String, InteriorNode> interiorNodesOld = new ConcurrentSkipListMap<>();
+
     public List<FaceNode> debugFaces = new LinkedList<>();
-
-    public Map<String, InteriorNode> interiorNodesOld = new ConcurrentSkipListMap<>();
-
-    public List<InteriorNode> interiorNodesNew = new LinkedList<>();
 
     public Integer falseEdgesCounter = 0;
 
@@ -461,38 +459,6 @@ public class ModelGraph extends Graph {
         interiorNodes.remove(id);
     }
 
-    public boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
-        Quartet<Vertex, Vertex, Vertex, Vertex> quartetNode = intNode.getQuartet();
-
-        return (isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue1()) ||
-                isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue0(), quartetNode.getValue3())) &&
-                (isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue1()) ||
-                        isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue1(), quartetNode.getValue3())) &&
-                (isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue1()) ||
-                        isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue2(), quartetNode.getValue3())) &&
-                (isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue0()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue1()) ||
-                        isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue2()) || isVertexSameAs(candSubGraph.getValue3(), quartetNode.getValue3()));
-
-    }
-
-    //additional methods for calculate some statistics
-
-    /*public void setOldInteriorNodes(ModelGraph graph){
-        ConcurrentMap<String, InteriorNode> intNodesCopy = graph.interiorNodes.entrySet()
-                                .stream()
-                                .collect(Collectors.toMap(Map.Entry::getKey,
-                                    Map.Entry::getValue));
-        interiorNodesOld = intNodesCopy;
-        interiorNodesNew.clear();
-    }*/
-
-    public boolean isInteriorNodeAddedInCurrentAlgStep(Quartet<Vertex, Vertex, Vertex, Vertex> newIntNodeVertices){
-        for(InteriorNode intNode: interiorNodesOld.values()){
-            if(checkSameVerticesInInteriorNode(newIntNodeVertices, intNode)) return false;
-        }
-        return true;
-    }
-
     //main method for InteriorNode
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
@@ -502,8 +468,6 @@ public class ModelGraph extends Graph {
                     InteriorNode interiorNode = insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
                     if(isInteriorNodeAddedInCurrentAlgStep(candSubGraph)){
                         interiorNode.setIsNewlyAdded(true);
-                        interiorNodesNew.add(interiorNode);
-                        //System.out.println("Was newly added = "+ interiorNode.getId());
                     }
                 }
             }
@@ -511,9 +475,23 @@ public class ModelGraph extends Graph {
         return this;
     }
 
+    public void setOldInteriorNodes(ModelGraph graph){
+        Map<String, InteriorNode> intNodesCopy = interiorNodes.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        interiorNodesOld = intNodesCopy;
+    }
+
+    public boolean isInteriorNodeAddedInCurrentAlgStep(Quartet<Vertex, Vertex, Vertex, Vertex> newIntNodeVertices){
+        for(InteriorNode intNode: interiorNodesOld.values()){
+            if(intNode.checkSameVerticesInInteriorNode(newIntNodeVertices)) return false;
+        }
+        return true;
+    }
+
     private boolean checkVerticesWithinSubgraphAlreadyProcessed(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph){
         for(Map.Entry<String, InteriorNode> intNode: this.interiorNodes.entrySet()){
-            if(checkSameVerticesInInteriorNode(candSubGraph, intNode.getValue())){
+            if(intNode.getValue().checkSameVerticesInInteriorNode(candSubGraph)){
                 return true;
             }
         }

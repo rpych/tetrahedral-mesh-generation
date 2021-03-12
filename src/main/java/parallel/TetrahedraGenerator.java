@@ -40,8 +40,6 @@ public class TetrahedraGenerator implements Callable<Integer> { //Runnable
                     InteriorNode interiorNode = graph.insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
                     if(graph.isInteriorNodeAddedInCurrentAlgStep(candSubGraph)){
                         interiorNode.setIsNewlyAdded(true);
-                        graph.interiorNodesNew.add(interiorNode);
-                        //System.out.println("Was newly added = "+ interiorNode.getId());
                     }
                 }
             }
@@ -51,7 +49,7 @@ public class TetrahedraGenerator implements Callable<Integer> { //Runnable
 
     private boolean checkVerticesWithinSubgraphAlreadyProcessed(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph){
         for(Map.Entry<String, InteriorNode> intNode: graph.getInteriorNodesMap().entrySet()){
-            if(graph.checkSameVerticesInInteriorNode(candSubGraph, intNode.getValue())){
+            if(intNode.getValue().checkSameVerticesInInteriorNode(candSubGraph)){
                 return true;
             }
         }
@@ -104,7 +102,6 @@ public class TetrahedraGenerator implements Callable<Integer> { //Runnable
         for(Map.Entry<String, Integer> candVertex: candSubGraphTopVertices.entrySet()){
             if(candVertex.getValue() == 3) { //common vertex for all 3 faces congruent with face formed by triangle parameter
                 topVertices.add(graph.getVerticesMap().get(candVertex.getKey()));
-                //break;
             }
         }
         return topVertices;
