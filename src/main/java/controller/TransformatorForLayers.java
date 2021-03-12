@@ -11,16 +11,14 @@ import visualization.MatlabVisualizer;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class TransformatorForLayers {
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public double breakRatio;
     public Integer counter = 0;
-    //TetrahedraGenManager tetGenManager;
+    TetrahedraGenManager tetGenManager;
     FileWriter edgesRatioFileWriter;;
     FileWriter anglesFileWriter;
 
@@ -28,7 +26,7 @@ public class TransformatorForLayers {
         this.graph = graph;
         hangingEdges = new Stack<GraphEdge>();
         //createFileWriters();
-        //tetGenManager = new TetrahedraGenManager();
+        tetGenManager = new TetrahedraGenManager();
     }
 
     public ModelGraph transform() {
@@ -59,36 +57,33 @@ public class TransformatorForLayers {
             //breaking ratio checking
             //checkAdaptationProperties(graph);
 
-            if(counter % 20 == 0) {
+            if(counter % 20 == 0 || counter <= 300) {
                 if (!checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 checkInteriorNodesMinMaxBreakingRatio(graph);
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
-                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()-graph.falseEdgesCounter) +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid07_03_20_" + counter);
-                matlabVisualizer.saveCode();
             }
             if (isEnoughBreakingAccuracy(graph)) {
+                tetGenManager.shutdownThreadPool();
                 System.out.println("ENOUGH accuracy met");
                 if (!checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
-                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size() - graph.falseEdgesCounter) +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()) +
                         ", false edges = "+ graph.falseEdgesCounter);
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid07_03_20_" + counter);
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid10_03_20_Par_" + counter);
                 matlabVisualizer.saveCode();
                 //closeFiles();
                 break;
             }
             //checkFacesConnected(graph);
 
-
-            //if(counter == 180) break;
         }
         return graph;
     }
@@ -177,7 +172,6 @@ public class TransformatorForLayers {
                     threeLongestSum += len;
                 }
                 c++;
-                //System.out.println("Sorted edges "+node.getId() +", len = "+ len);
             }
             double ratio = (threeLongestSum/ovsum);
             writeToEdgeRatioFileWriter(counter+";"+node.getId()+";"+ratio+"\n");
@@ -211,8 +205,6 @@ public class TransformatorForLayers {
         Double angle2 = calcAngle(faceVert.getValue1(), faceVert.getValue0(), faceVert.getValue2());
         Double angle3 = calcAngle(faceVert.getValue2(), faceVert.getValue0(), faceVert.getValue1());
 
-        //System.out.println("Angle1 = "+angle1 + ", angle2 = "+ angle2 + ", angle3 = "+ angle3);
-
         return Math.min(angle1, Math.min(angle2, angle3));
     }
 
@@ -235,7 +227,6 @@ public class TransformatorForLayers {
         double angle = Math.acos(cosine);
         double angleInDegrees = (angle/Math.PI) * 180;
 
-        //System.out.println("AngleRad = "+angle + ", angleInDegrees = "+ angleInDegrees);
         return  angleInDegrees;
     }
 
@@ -249,7 +240,7 @@ public class TransformatorForLayers {
             counter += out;
             if(out == 0) counter += 1;
             facesInInteriorCount.put(face.getId(), out);
-            if(out == 0 ){ //|| out > 2
+            if(out == 0 ){
                 graph.debugFaces.add(face);
             }
         }
@@ -450,12 +441,10 @@ public class TransformatorForLayers {
         }
         if(Double.compare(v1v2Len, longestEdgeLen) >= 0){
             if(Double.compare(v1v2Len, longestEdgeLen) == 1){
-                //longestEdgeLen = v1v2Len;
                 longestEdge = new Pair<>(v1, v2);
             }
             else if((Double.compare(v1v2Len, longestEdgeLen) == 0) && graph.isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
                     && !graph.isEdgeBetween(v1, v2)){
-                //longestEdgeLen = v1v2Len;
                 longestEdge = new Pair<>(v1, v2);
             }
         }
@@ -468,9 +457,9 @@ public class TransformatorForLayers {
         //graph.setOldInteriorNodes(graph); //ugly code
         graph.clearInteriorNodes();
         //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
-        return graph.createInteriorNodesForNewlyFoundSubGraphs();
-        //tetGenManager.createTasksForThreadPool(graph.getFacesNum());
-        //return graph;
+        //return graph.createInteriorNodesForNewlyFoundSubGraphs();
+        tetGenManager.createTasksForThreadPool(graph.getFacesNum());
+        return graph;
     }
 
     //checks
@@ -563,18 +552,30 @@ public class TransformatorForLayers {
 
         private void createTasksForThreadPool(Integer facesCollectionSize){
             int facesPerThread = facesCollectionSize / POOL_SIZE;
+            Collection< Callable<Integer> > taskRes = new LinkedList<>();
+
             if(facesPerThread < 20){
-                service.submit(new TetrahedraGenerator(graph, 1, facesCollectionSize));
+                taskRes.add(new TetrahedraGenerator(graph, 1, facesCollectionSize));
             }
-            else{
-                for(int i=0; i<POOL_SIZE; ++i){
-                    service.submit(new TetrahedraGenerator(graph, (facesPerThread*i + 1), facesPerThread));
+            else {
+                for (int i = 0; i < POOL_SIZE; ++i) {
+                    int facesPerThreadUpdated = ((i + 1) < POOL_SIZE) ? facesPerThread : (facesPerThread + (facesCollectionSize % POOL_SIZE));
+                    taskRes.add(new TetrahedraGenerator(graph, (facesPerThread * i + 1), facesPerThreadUpdated));
                 }
             }
 
+            try {
+                List<Future<Integer>> futures = service.invokeAll(taskRes);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        private void shutdownThreadPool(){
             service.shutdown();
             try {
-                if (!service.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
+                if (!service.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
                     service.shutdownNow();
                 }
             } catch (InterruptedException e) {

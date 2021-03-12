@@ -13,29 +13,12 @@ import java.util.List;
 public class Main {
 	
     public static void main(String[] args) {
-        /*ModelGraph tetrahedra = generateTetrahedra();
-        Transformator transformator = new Transformator(tetrahedra);
-        tetrahedra = transformator.transform();
-        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(tetrahedra, "vis");
-        matlabVisualizer.saveCode();
-        
-        ModelGraph tetrahedra2 = generateTetrahedra2();
-        Transformator transformator2 = new Transformator(tetrahedra2);
-        tetrahedra2 = transformator2.transform();
-        MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(tetrahedra2, "vis2");
-        matlabVisualizer2.saveCode();*/
         
         ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
-        TransformatorForLayers transformator3 = new TransformatorForLayers(cuboid);
-        cuboid = transformator3.transform();
-        MatlabVisualizer matlabVisualizer3 = new MatlabVisualizer(cuboid, "visLayCuboid_07_03_20");
-        matlabVisualizer3.saveCode();
-
-        /*ModelGraph tetrahedra2 = generateTetrahedra();
-        TransformatorForLayers transformator2 = new TransformatorForLayers(tetrahedra2);
-        tetrahedra2 = transformator2.transform();
-        MatlabVisualizer matlabVisualizer2 = new MatlabVisualizer(tetrahedra2, "visLay");
-        matlabVisualizer2.saveCode();*/
+        TransformatorForLayers transformator = new TransformatorForLayers(cuboid);
+        cuboid = transformator.transform();
+        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "visLayCuboid_10_03_20_Par");
+        matlabVisualizer.saveCode();
         
         System.out.println("Program ended successfully");
     }
@@ -48,25 +31,6 @@ public class Main {
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.5, 0.2, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(1.0, 0.0, 0.0)));
         nodes.add(graph.insertVertexAutoNamed(new Coordinates(0.0, 0.0, 0.0)));
-
-        //P1(0.45, 0.3, 0.6), P2(0.55, 0.3, 0.4), P3(0.76, 0.16, 0.32)
-        //10x + 5y + 5z - 9 = 0 => z = -2x -y + 1.8 zle
-        // 70x +85y + 35z - 78 = 0 => z = -2x -17/7y + 78/35
-
-        //P1(0.45, 0.3, 0.7), P2(0.55, 0.35, 0.7), P3(0.76, 0.16, 0.65)
-        //100x - 200y + 1180z - 811 = 0
-
-        ////P1(0.45, 0.3, 0.6), P2(0.55, 0.35, 0.6), P3(0.76, 0.16, 0.55)
-        //100x - 200y + 1180z - 693 = 0
-
-        //P1(0.45, 0.3, 0.35), P2(0.55, 0.35, 0.35), P3(0.76, 0.16, 0.3)
-        //50x - 100y + 590z - 199 = 0 => z = -5/59x + 10/59y + (199/590)
-
-        //P1(0.45, 0.3, 0.35), P2(0.55, 0.35, 0.35), P3(0.76, 0.16, 0.3)
-        //50x - 100y + 590z - 199 = 0 => z = -5/59x + 10/59y + (199/590)
-
-        //P1(0.0, 0.3, 0.35), P2(0.0, 0.8, 0.35), P3(2.0, 0.4, 0.3)
-        //x + 40z - 14 = 0 => z = -(1/40)x + (14/40)
 
         //P1(0.0, 0.3, 0.4), P2(0.0, 0.8, 0.4), P3(2.0, 0.4, 0.2)
         //x + 10z - 4 = 0 => z = -(0.1)*x + 0.4

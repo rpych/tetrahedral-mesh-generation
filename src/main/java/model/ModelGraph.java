@@ -1,21 +1,15 @@
 package model;
 
-import common.ElementAttributes;
 import common.IdFormatter;
-//import org.graphstream.graph.Edge;
-//import org.graphstream.graph.Element;
-//import org.graphstream.graph.Node;
-import org.graphstream.graph.implementations.MultiGraph;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
-public class ModelGraph extends Graph { //extends MultiGraph
+public class ModelGraph extends Graph {
 
     private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
 
@@ -51,9 +45,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
     }
 
     public Vertex insertVertex(Vertex vertex) {
-        /*Node node = this.addNode(vertex.getId());
-        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, vertex.getXCoordinate(), vertex.getYCoordinate(), vertex.getZCoordinate());*/
         vertices.put(vertex.getId(), vertex);
         return vertex;
     }
@@ -103,10 +94,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
     }
 
     public FaceNode insertFace(FaceNode faceNode) {
-        /*Node node = this.addNode(faceNode.getId());
-        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, faceNode.getXCoordinate(), faceNode.getYCoordinate(), faceNode.getZCoordinate());
-        node.addAttribute("ui.style", "fill-color: red;");*/
         faces.put(id, faceNode);
         return faceNode;
     }
@@ -118,10 +105,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
 
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
         FaceNode faceNode = new FaceNode(this, id, v1, v2, v3);
-        /*Node node = this.addNode(faceNode.getId());
-        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, faceNode.getXCoordinate(), faceNode.getYCoordinate(), faceNode.getZCoordinate());
-        node.addAttribute("ui.class", "important");*/
         faces.put(id, faceNode);
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
@@ -140,7 +123,7 @@ public class ModelGraph extends Graph { //extends MultiGraph
         String id = "F_" + IdFormatter.df.format(coordinates.getX()) + "_"
                 + IdFormatter.df.format(coordinates.getY()) + "_"
                 + IdFormatter.df.format(coordinates.getZ());
-//    	System.out.println(id);
+
         return insertFace(id, v1, v2, v3);
     }
 
@@ -152,7 +135,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
                 .collect(Collectors.toList());
         edgesToRemove.forEach(this::deleteEdge);
         faces.remove(id);
-        //this.removeNode(id);
     }
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border) {
@@ -174,19 +156,10 @@ public class ModelGraph extends Graph { //extends MultiGraph
 
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border, String uiStyle) {
         GraphEdge graphEdge = new GraphEdge.GraphEdgeBuilder(id, n1, n2, border).build();
-        /*Edge edge = this.addEdge(graphEdge.getId(), n1, n2);
-        if (uiStyle != null) {
-            edge.addAttribute("ui.style", uiStyle);
-        }*/
-        /*edges.put(graphEdge.getId(), graphEdge);
-        return graphEdge;*/
         return insertEdge(graphEdge);
     }
 
     public GraphEdge insertEdge(GraphEdge graphEdge) {
-        //Edge edge = this.addEdge(graphEdge.getId(), graphEdge.getNode0().getId(), graphEdge.getNode1().getId());
-        /*System.out.println("EDGE in NEIGHBOUR MAP = "+ graphEdge.getEdgeNodes().toString() + ", Node 0 = "+ graphEdge.getEdgeNodes().getValue0().toString()+
-                ", Node 1 = "+ graphEdge.getEdgeNodes().getValue1().toString());*/
         graphEdge.getEdgeNodes().getValue0().addNeighbourEdge(graphEdge);
         graphEdge.getEdgeNodes().getValue1().addNeighbourEdge(graphEdge);
         edges.put(graphEdge.getId(), graphEdge);
@@ -200,7 +173,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
 
     public void deleteEdge(String edgeId){
         GraphEdge graphEdge = edges.remove(edgeId);
-        //this.removeEdge(edgeId);
         graphEdge.getEdgeNodes().getValue0().removeNeighbourEdge(graphEdge);
         graphEdge.getEdgeNodes().getValue1().removeNeighbourEdge(graphEdge);
         if(edgeId.contains("I") || edgeId.contains("F"))
@@ -327,8 +299,9 @@ public class ModelGraph extends Graph { //extends MultiGraph
                 && Math.abs(calculateInlineMatrixDeterminant(v, beginning, end)) < epsilon;
     }
 
+    //change on a.getId().equals(b.getId()) from a.getCoordinates().equals(b.getCoordinates());
     private boolean isVertexSameAs(Vertex a, Vertex b){
-        return a.getCoordinates().equals(b.getCoordinates());
+        return a.getId().equals(b.getId());
     }
 
     private boolean areCoordinatesMatching(Vertex v, Vertex beginning, Vertex end){
@@ -446,24 +419,29 @@ public class ModelGraph extends Graph { //extends MultiGraph
     }
 
     public InteriorNode insertInteriorNode(InteriorNode interiorNode) {
-        /*Node node = this.addNode(interiorNode.getId());
-        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());*/
         interiorNodes.put(interiorNode.getId(), interiorNode);
         return interiorNode;
     }
 
     public InteriorNode insertInteriorNodeAutoNamed(GraphNode n1, GraphNode n2, GraphNode n3, GraphNode n4){
-        String nodeName = InteriorNode.INTERIOR_SYMBOL + n1.getId() + "_" + n2.getId() + "_" + n3.getId() + "_" + n4.getId();
+        //String nodeName = InteriorNode.INTERIOR_SYMBOL + n1.getId() + "_" + n2.getId() + "_" + n3.getId() + "_" + n4.getId();
+        Coordinates  coordinates = new Coordinates(
+                (n1.getXCoordinate() + n2.getXCoordinate() + n3.getXCoordinate() + n4.getXCoordinate()) / 4d,
+                (n1.getYCoordinate() + n2.getYCoordinate() + n3.getYCoordinate() + n4.getYCoordinate()) / 4d,
+                (n1.getZCoordinate() + n2.getZCoordinate() + n3.getZCoordinate() + n4.getZCoordinate()) / 4d
+        );
+
+        String nodeName = InteriorNode.INTERIOR_SYMBOL + IdFormatter.df.format(coordinates.getX()) + "_"
+                + IdFormatter.df.format(coordinates.getY()) + "_"
+                + IdFormatter.df.format(coordinates.getZ());
+        //System.out.println(nodeName);
         return insertInteriorNode(nodeName, (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4, null);
     }
 
     public InteriorNode insertInteriorNode(String interiorNodeName, Vertex v1, Vertex v2, Vertex v3, Vertex v4, String uiStyle){
         InteriorNode interiorNode = new InteriorNode(this, interiorNodeName, v1, v2, v3, v4);
-        /*Node node = this.addNode(interiorNode.getId());
-        node.setAttribute(ElementAttributes.FROZEN_LAYOUT);
-        node.setAttribute(ElementAttributes.XYZ, interiorNode.getXCoordinate(), interiorNode.getYCoordinate(), interiorNode.getZCoordinate());*/
-        interiorNodes.put(interiorNodeName, interiorNode);
+        if(!interiorNodes.containsKey(interiorNodeName))
+            interiorNodes.put(interiorNodeName, interiorNode);
 
         /*insertEdge(interiorNodeName.concat(v1.getId()), interiorNode, v1, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: orange;");
@@ -481,7 +459,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
                 .collect(Collectors.toList());
         edgesToRemove.forEach(this::deleteEdge);
         interiorNodes.remove(id);
-        //this.removeNode(id);
     }
 
     public boolean checkSameVerticesInInteriorNode(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph, InteriorNode intNode){
@@ -589,7 +566,6 @@ public class ModelGraph extends Graph { //extends MultiGraph
         for(Map.Entry<String, Integer> candVertex: candSubGraphTopVertices.entrySet()){
             if(candVertex.getValue() == 3) { //common vertex for all 3 faces congruent with face formed by triangle parameter
                 topVertices.add(vertices.get(candVertex.getKey()));
-                //break;
             }
         }
         return topVertices;
