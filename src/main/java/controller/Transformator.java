@@ -1,3 +1,4 @@
+
 package controller;
 
 import model.*;
@@ -10,6 +11,8 @@ import java.util.Optional;
 
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
+
+import static common.Utils.isEdgeBetween;
 
 public class Transformator implements ITransformator{
 	public ModelGraph graph;
@@ -61,7 +64,7 @@ public class Transformator implements ITransformator{
 	// TODO: when two longest edges in face are equal face should be brought to edge brought before
 	private ModelGraph breakFace(ModelGraph graph, FaceNode face) {
 		Pair<Vertex, Vertex> vertexes = findLongestEdgeOfFace(graph, face);
-		if(graph.isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
+		if(isEdgeBetween(vertexes.getValue0(), vertexes.getValue1())){
 			Vertex vForNewEdge= getVertexForNewEdge(face, vertexes);
 //			System.out.println("Edge will be deleted");
 			GraphEdge eToSplit = graph.getEdgeNotOptional(vertexes.getValue0(), vertexes.getValue1());
@@ -101,15 +104,15 @@ public class Transformator implements ITransformator{
 		v0 = face.getTriangle().getValue0();
 		v1 = face.getTriangle().getValue1();
 		v2 = face.getTriangle().getValue2();
-		if(!graph.isEdgeBetween(v0, v1)) {
+		if(!isEdgeBetween(v0, v1)) {
 			graph.insertEdgeAutoNamed(v0, v1, false);
 			wasEdge01 = false;
 		}
-		if(!graph.isEdgeBetween(v0, v2)) {
+		if(!isEdgeBetween(v0, v2)) {
 			graph.insertEdgeAutoNamed(v0, v2, false);
 			wasEdge02 = false;
 		}
-		if(!graph.isEdgeBetween(v1, v2)) {
+		if(!isEdgeBetween(v1, v2)) {
 			graph.insertEdgeAutoNamed(v1, v2, false);
 			wasEdge12 = false;
 		}
@@ -272,3 +275,4 @@ public class Transformator implements ITransformator{
 		return graph;
 	}
 }
+

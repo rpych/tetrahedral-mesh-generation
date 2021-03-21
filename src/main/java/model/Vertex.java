@@ -1,14 +1,5 @@
 package model;
 
-//import org.graphstream.graph.Edge;
-//import org.graphstream.graph.Node;
-//import org.graphstream.graph.implementations.AbstractGraph;
-//import org.graphstream.graph.implementations.AbstractNode;
-
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
-
 public class Vertex extends GraphNode {
 
     private static final String VERTEX_SYMBOL = "V";

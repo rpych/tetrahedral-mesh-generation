@@ -4,15 +4,14 @@ import common.BreakingStats;
 import common.LFunction;
 import model.*;
 import org.javatuples.Pair;
-import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 import parallel.TetrahedraGenerator;
 import visualization.MatlabVisualizer;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+
+import static common.Utils.isEdgeBetween;
 
 public class TransformatorForLayers {
     public ModelGraph graph;
@@ -23,11 +22,11 @@ public class TransformatorForLayers {
     private BreakingStats stats;
 
 
-    public TransformatorForLayers(ModelGraph graph) {
+    public TransformatorForLayers(ModelGraph graph, BreakingStats stats) {
         this.graph = graph;
         this.hangingEdges = new Stack<GraphEdge>();
         this.tetGenManager = new TetrahedraGenManager();
-        this.stats = new BreakingStats(graph.getInteriorNodesMap(), true);
+        this.stats = stats;
     }
 
     public ModelGraph transform() {
@@ -56,64 +55,35 @@ public class TransformatorForLayers {
             face = findFaceToBreak(graph); //face on different layers
 
             //breaking ratio checking
-            //stats.checkAdaptationProperties(graph);
+            stats.checkAdaptationProperties(graph);
 
             if(counter % 20 == 0 || counter <= 300) {
-                if (!checkAllFacesBelongToInteriorNode(graph)) {
+                if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 //stats.checkInteriorNodesMinMaxBreakingRatio(graph);
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
-                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) +
-                        ", false edges = "+ graph.falseEdgesCounter);
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) );
             }
             if (isEnoughBreakingAccuracy(graph)) {
                 tetGenManager.shutdownThreadPool();
                 System.out.println("ENOUGH accuracy met");
-                if (!checkAllFacesBelongToInteriorNode(graph)) {
+                if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
-                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()) +
-                        ", false edges = "+ graph.falseEdgesCounter);
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()));
                 MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid10_03_20_Par_" + counter);
                 matlabVisualizer.saveCode();
                 break;
             }
-            //checkFacesConnected(graph);
+            //stats.checkFacesConnected(graph);
 
         }
         return graph;
     }
-
-    public boolean checkAllFacesBelongToInteriorNode(ModelGraph graph){
-        int counter = 0;
-        Map<String, Integer> facesInInteriorCount = new HashMap<>();
-        Collection<FaceNode> faces = graph.getFaces();
-        for(FaceNode face: faces){
-            int out = isFaceInAnyInteriorNode(face);
-            counter += out;
-            if(out == 0) counter += 1;
-            facesInInteriorCount.put(face.getId(), out);
-            if(out == 0 ){
-                graph.debugFaces.add(face);
-            }
-        }
-        boolean f = true;
-        for(Map.Entry<String, Integer> entry: facesInInteriorCount.entrySet()){
-            if(entry.getValue().equals(0) || entry.getValue() > 2){
-                f = false;
-                System.out.println("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
-            }
-        }
-        System.out.println("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +
-                " InteriorNodes*4 = "+ graph.getInteriorNodes().size()*4);
-        return f;
-    }
-
-
 
     public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
         for(FaceNode face: graph.getFaces()){
@@ -290,8 +260,8 @@ public class TransformatorForLayers {
                 longestEdgeLen = v0v2Len;
                 longestEdge = new Pair<>(v0, v2);
             }
-            else if((Double.compare(v0v2Len, longestEdgeLen) == 0) && graph.isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
-                    && !graph.isEdgeBetween(v0, v2)){
+            else if((Double.compare(v0v2Len, longestEdgeLen) == 0) && isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
+                    && !isEdgeBetween(v0, v2)){
                 longestEdgeLen = v0v2Len;
                 longestEdge = new Pair<>(v0, v2);
             }
@@ -300,8 +270,8 @@ public class TransformatorForLayers {
             if(Double.compare(v1v2Len, longestEdgeLen) == 1){
                 longestEdge = new Pair<>(v1, v2);
             }
-            else if((Double.compare(v1v2Len, longestEdgeLen) == 0) && graph.isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
-                    && !graph.isEdgeBetween(v1, v2)){
+            else if((Double.compare(v1v2Len, longestEdgeLen) == 0) && isEdgeBetween(longestEdge.getValue0(), longestEdge.getValue1())
+                    && !isEdgeBetween(v1, v2)){
                 longestEdge = new Pair<>(v1, v2);
             }
         }
@@ -320,13 +290,7 @@ public class TransformatorForLayers {
     }
 
     //checks
-    public void checkFacesConnected(ModelGraph graph){
-        for(FaceNode face: graph.getFaces()){
-            if(!graph.areVertexesLinked(face)){
-                System.out.println("Face exists but its vertices are not linked !!!!!");
-            }
-        }
-    }
+
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
         int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
@@ -342,15 +306,6 @@ public class TransformatorForLayers {
         }
         System.out.println("Intermediate threshold = "+ numOfIntNodesBelowThreshIntermed + ", Low threshold = "+ numOfIntNodesBelowThreshLow);
         return false;
-    }
-
-    public int isFaceInAnyInteriorNode(FaceNode face){
-        int count = 0;
-        Collection<InteriorNode> interiorNodes = graph.getInteriorNodes();
-        for(InteriorNode node: interiorNodes){
-            if(node.containsFace(face)) count++;
-        }
-        return count;
     }
 
     //inner class

@@ -1,6 +1,5 @@
 package model;
 
-import org.graphstream.graph.implementations.AbstractEdge;
 import org.javatuples.Pair;
 
 public class GraphEdge { //extends AbstractEdge
@@ -12,7 +11,6 @@ public class GraphEdge { //extends AbstractEdge
     private String id;
 
     public GraphEdge(String id, Pair<GraphNode, GraphNode> edgeNodes, boolean border) {
-        //super(id, edgeNodes.getValue0(), edgeNodes.getValue1(), false);
         this.id = id;
         this.edgeNodes = edgeNodes;
         this.border = border;

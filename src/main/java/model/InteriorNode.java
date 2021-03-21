@@ -1,6 +1,5 @@
 package model;
 
-//import org.graphstream.graph.implementations.AbstractGraph;
 import org.javatuples.Quartet;
 
 import static common.Utils.isVertexSameAs;

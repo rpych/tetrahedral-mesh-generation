@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static common.Utils.isEdgeBetween;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GraphTransformatorTest {
@@ -72,7 +73,7 @@ class GraphTransformatorTest {
 
     private Boolean isEdgePresentInInputGraph(GraphEdge e, ModelGraph transformed){
         Optional<GraphEdge> optEdge = transformed.getEdgeById(e.getId());
-        return optEdge.isPresent() && transformed.isEdgeBetween(optEdge.get().getEdgeNodes().getValue0(),
+        return optEdge.isPresent() && isEdgeBetween(optEdge.get().getEdgeNodes().getValue0(),
                                                                 optEdge.get().getEdgeNodes().getValue1());
     }
 

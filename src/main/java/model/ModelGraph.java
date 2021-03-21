@@ -9,6 +9,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
+import static common.Utils.isVertexSameAs;
+import static common.Utils.isEdgeBetween;
+
 public class ModelGraph extends Graph {
 
     private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
@@ -23,7 +26,7 @@ public class ModelGraph extends Graph {
 
     public List<FaceNode> debugFaces = new LinkedList<>();
 
-    public Integer falseEdgesCounter = 0;
+    //public Integer falseEdgesCounter = 0;
 
     public ModelGraph(String id) {
         super(id);
@@ -107,7 +110,6 @@ public class ModelGraph extends Graph {
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
         //insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
-        falseEdgesCounter = falseEdgesCounter + 3;
         return faceNode;
     }
 
@@ -173,8 +175,6 @@ public class ModelGraph extends Graph {
         GraphEdge graphEdge = edges.remove(edgeId);
         graphEdge.getEdgeNodes().getValue0().removeNeighbourEdge(graphEdge);
         graphEdge.getEdgeNodes().getValue1().removeNeighbourEdge(graphEdge);
-        if(edgeId.contains("I") || edgeId.contains("F"))
-            falseEdgesCounter -= 1;
     }
 
     public Optional<GraphEdge> getEdgeById(String id) {
@@ -265,10 +265,6 @@ public class ModelGraph extends Graph {
         return Optional.ofNullable(edges.get(v1.getEdgeBetween(v2).getId()));
     }
 
-    public boolean isEdgeBetween(GraphNode v1, GraphNode v2) {
-        return null != v1.getEdgeBetween(v2);
-    }
-    
     public GraphEdge getEdgeNotOptional(Vertex v1, Vertex v2) {
         return edges.get(v1.getEdgeBetween(v2).getId());
     }
@@ -295,11 +291,6 @@ public class ModelGraph extends Graph {
             return false;
         } else return areCoordinatesMatching(v, beginning, end)
                 && Math.abs(calculateInlineMatrixDeterminant(v, beginning, end)) < epsilon;
-    }
-
-    //change on a.getId().equals(b.getId()) from a.getCoordinates().equals(b.getCoordinates());
-    private boolean isVertexSameAs(Vertex a, Vertex b){
-        return a.getId().equals(b.getId());
     }
 
     private boolean areCoordinatesMatching(Vertex v, Vertex beginning, Vertex end){
@@ -337,9 +328,9 @@ public class ModelGraph extends Graph {
     
     public boolean areVertexesLinked(FaceNode face) {
     	Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
-    	return this.isEdgeBetween(triangle.getValue0(), triangle.getValue1()) &&
-    			this.isEdgeBetween(triangle.getValue0(), triangle.getValue2()) &&
-    			this.isEdgeBetween(triangle.getValue1(), triangle.getValue2());
+    	return isEdgeBetween(triangle.getValue0(), triangle.getValue1()) &&
+    			isEdgeBetween(triangle.getValue0(), triangle.getValue2()) &&
+    			isEdgeBetween(triangle.getValue1(), triangle.getValue2());
     }
     
     public Collection<GraphEdge> getEdgesBetweenVertices(){
@@ -445,7 +436,6 @@ public class ModelGraph extends Graph {
         insertEdge(interiorNodeName.concat(v2.getId()), interiorNode, v2, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v3.getId()), interiorNode, v3, false, "fill-color: orange;");
         insertEdge(interiorNodeName.concat(v4.getId()), interiorNode, v4, false, "fill-color: orange;");*/
-        falseEdgesCounter = falseEdgesCounter + 4;
 
         return interiorNode;
     }

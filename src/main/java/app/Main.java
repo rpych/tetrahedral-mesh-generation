@@ -1,10 +1,10 @@
 package app;
 
+import common.BreakingStats;
 import controller.TransformatorForLayers;
 import model.ModelGraph;
 import model.Vertex;
 import model.Coordinates;
-import controller.Transformator;
 import visualization.MatlabVisualizer;
 
 import java.util.ArrayList;
@@ -15,7 +15,8 @@ public class Main {
     public static void main(String[] args) {
         
         ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
-        TransformatorForLayers transformator = new TransformatorForLayers(cuboid);
+        BreakingStats stats = new BreakingStats(false, true);
+        TransformatorForLayers transformator = new TransformatorForLayers(cuboid, stats);
         cuboid = transformator.transform();
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "visLayCuboid_10_03_20_Par");
         matlabVisualizer.saveCode();

@@ -11,31 +11,75 @@ import java.util.*;
 
 public class BreakingStats {
 
-    boolean areStatsActive = false;
-
-    private Map<String, InteriorNode> interiorNodes;
+    boolean arePropertiesStatsActive;
+    boolean areStructureStatsActive;
 
     Double breakRatio = 0.0d;
 
     FileWriter edgesRatioFileWriter;;
     FileWriter anglesFileWriter;
 
-    public BreakingStats(Map<String, InteriorNode> interiorNodes, boolean areStatsActive){
-        this.areStatsActive = areStatsActive;
-        this.interiorNodes = interiorNodes;
+    public BreakingStats(boolean arePropertiesStatsActive, boolean areStructureStatsActive){
+        this.arePropertiesStatsActive = arePropertiesStatsActive;
+        this.areStructureStatsActive = areStructureStatsActive;
         createFileWriters();
     }
 
+    public void checkFacesConnected(ModelGraph graph){
+        if(!areStructureStatsActive) return;
+
+        for(FaceNode face: graph.getFaces()){
+            if(!graph.areVertexesLinked(face)){
+                System.out.println("Face exists but its vertices are not linked !!!!!");
+            }
+        }
+    }
+
+    public boolean checkAllFacesBelongToInteriorNode(ModelGraph graph){
+        if(!areStructureStatsActive) return true;
+
+        int counter = 0;
+        Map<String, Integer> facesInInteriorCount = new HashMap<>();
+        Collection<FaceNode> faces = graph.getFaces();
+        for(FaceNode face: faces){
+            int out = isFaceInAnyInteriorNode(graph, face);
+            counter += out;
+            if(out == 0) counter += 1;
+            facesInInteriorCount.put(face.getId(), out);
+            if(out == 0 ){
+                graph.debugFaces.add(face);
+            }
+        }
+        boolean f = true;
+        for(Map.Entry<String, Integer> entry: facesInInteriorCount.entrySet()){
+            if(entry.getValue().equals(0) || entry.getValue() > 2){
+                f = false;
+                System.out.println("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
+            }
+        }
+        System.out.println("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +
+                " InteriorNodes*4 = "+ graph.getInteriorNodes().size()*4);
+        return f;
+    }
+
+    public int isFaceInAnyInteriorNode(ModelGraph graph, FaceNode face){
+        int count = 0;
+        Collection<InteriorNode> interiorNodes = graph.getInteriorNodes();
+        for(InteriorNode node: interiorNodes){
+            if(node.containsFace(face)) count++;
+        }
+        return count;
+    }
+
     public void checkAdaptationProperties(ModelGraph graph){
-        if(areStatsActive) {
+        if(arePropertiesStatsActive) {
             checkInteriorNodesEdgesLenRatio(graph);
             checkAnglesBetweenEdgesInInteriorNode(graph);
         }
     }
 
     public void checkInteriorNodesEdgesLenRatio(ModelGraph graph){
-        //Queue<InteriorNode> interiorNodes = interiorNodesNew;
-        for(InteriorNode node: interiorNodes.values()){
+        for(InteriorNode node: graph.getInteriorNodes()){
             if(!node.isNewlyAdded()) continue;
             Map<GraphEdge, Double> edges = new HashMap<>();
             LinkedHashMap<GraphEdge, Double> sortedMap = new LinkedHashMap<>();
@@ -85,8 +129,7 @@ public class BreakingStats {
     }
 
     public void checkAnglesBetweenEdgesInInteriorNode(ModelGraph graph){
-        //Queue<InteriorNode> interiorNodes = interiorNodesNew;
-        for(InteriorNode node: interiorNodes.values()){
+        for(InteriorNode node: graph.getInteriorNodes()){
             if(!node.isNewlyAdded()) continue;
             List<Triplet<Vertex, Vertex, Vertex>> facesVertices = new LinkedList<>();
             Quartet<Vertex, Vertex, Vertex, Vertex> quartet = node.getQuartet();
@@ -172,7 +215,7 @@ public class BreakingStats {
     }
 
     public void checkInteriorNodesMinMaxBreakingRatio(ModelGraph graph){
-        if(!areStatsActive) return;
+        if(!arePropertiesStatsActive) return;
 
         double min_dist = 1000.0, max_dist = 0.0;
         for(InteriorNode node: graph.getInteriorNodes()){

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class TetrahedraGenerator implements Callable<Integer> { //Runnable
+public class TetrahedraGenerator implements Callable<Integer> {
 
     ModelGraph graph;
     public Integer startFaceIdx;

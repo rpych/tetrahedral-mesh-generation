@@ -1,19 +1,10 @@
 package model;
 
-import common.ElementAttributes;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
-//import org.graphstream.graph.implementations.AbstractGraph;
-//import org.graphstream.graph.implementations.AbstractNode;
-//import org.graphstream.graph.implementations.SingleNode;
 import org.javatuples.Pair;
 
 public abstract class GraphNode { //extends SingleNode
@@ -35,8 +26,6 @@ public abstract class GraphNode { //extends SingleNode
     }
 
     protected GraphNode(Graph graph, String id, String symbol, Coordinates coordinates) {
-        /*super(graph, id);
-        super.setAttribute(ElementAttributes.FROZEN_LAYOUT);*/
         this.id = id;
         this.symbol = symbol;
         this.coordinates = coordinates;
