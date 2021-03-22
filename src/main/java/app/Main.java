@@ -2,6 +2,7 @@ package app;
 
 import common.BreakingStats;
 import controller.TransformatorForLayers;
+import logger.MeshLogger;
 import model.ModelGraph;
 import model.Vertex;
 import model.Coordinates;

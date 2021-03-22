@@ -2,6 +2,7 @@ package controller;
 
 import common.BreakingStats;
 import common.LFunction;
+import logger.MeshLogger;
 import model.*;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
@@ -10,6 +11,7 @@ import visualization.MatlabVisualizer;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static common.Utils.isEdgeBetween;
 
@@ -20,6 +22,7 @@ public class TransformatorForLayers {
     private TetrahedraGenManager tetGenManager;
 
     private BreakingStats stats;
+    MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
 
 
     public TransformatorForLayers(ModelGraph graph, BreakingStats stats) {

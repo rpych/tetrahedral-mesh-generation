@@ -1,5 +1,7 @@
 package parallel;
 
+import controller.TransformatorForLayers;
+import logger.MeshLogger;
 import model.*;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
