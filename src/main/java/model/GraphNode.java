@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.javatuples.Pair;
 
-public abstract class GraphNode { //extends SingleNode
+public abstract class GraphNode {
 
     private final String symbol;
 
@@ -18,7 +18,6 @@ public abstract class GraphNode { //extends SingleNode
     protected ConcurrentLinkedDeque<GraphEdge> neighborEdgeList;
 
     protected GraphNode(Graph graph, String id, String symbol, double xCoordinate, double yCoordinate, double zCoordinate) {
-        //this(graph, id, symbol, new Coordinates(xCoordinate, yCoordinate, zCoordinate));
         this.id = id;
         this.symbol = symbol;
         this.coordinates = new Coordinates(xCoordinate, yCoordinate, zCoordinate);
@@ -26,6 +25,13 @@ public abstract class GraphNode { //extends SingleNode
     }
 
     protected GraphNode(Graph graph, String id, String symbol, Coordinates coordinates) {
+        this.id = id;
+        this.symbol = symbol;
+        this.coordinates = coordinates;
+        this.neighborEdgeList = new ConcurrentLinkedDeque<>();
+    }
+
+    protected GraphNode(String id, String symbol, Coordinates coordinates) {
         this.id = id;
         this.symbol = symbol;
         this.coordinates = coordinates;

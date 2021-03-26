@@ -100,12 +100,12 @@ public class ModelGraph extends Graph {
     }
 
     public FaceNode insertFace(String id, Coordinates coordinates) {
-        FaceNode faceNode = new FaceNode(this, id, coordinates);
+        FaceNode faceNode = new FaceNode(id, coordinates);
         return insertFace(faceNode);
     }
 
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
-        FaceNode faceNode = new FaceNode(this, id, v1, v2, v3);
+        FaceNode faceNode = new FaceNode(id, v1, v2, v3);
         faces.put(id, faceNode);
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");

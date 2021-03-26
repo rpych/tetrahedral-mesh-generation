@@ -15,7 +15,7 @@ import java.util.logging.Level;
 
 import static common.Utils.isEdgeBetween;
 
-public class TransformatorForLayers {
+public class TransformatorForLayers implements ITransformator{
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public static Integer counter = 0;

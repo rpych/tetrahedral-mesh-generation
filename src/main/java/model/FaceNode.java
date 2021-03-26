@@ -9,16 +9,16 @@ public class FaceNode extends GraphNode {
 
     private static final String FACE_SYMBOL = "F";
 
-    private  Triplet<Vertex, Vertex, Vertex> triangle;
+    private Triplet<Vertex, Vertex, Vertex> triangle;
 
     private boolean R;
 
-    public FaceNode(ModelGraph graph, String id, Coordinates coordinates) {
-        super(graph, id, FACE_SYMBOL, coordinates);
+    public FaceNode(String id, Coordinates coordinates) {
+        super(id, FACE_SYMBOL, coordinates);
     }
 
-    public FaceNode(ModelGraph graph, String id, Vertex v1, Vertex v2, Vertex v3) {
-        super(graph, id, FACE_SYMBOL, getFacePosition(v1, v2, v3));
+    public FaceNode(String id, Vertex v1, Vertex v2, Vertex v3) {
+        super(id, FACE_SYMBOL, getFacePosition(v1, v2, v3));
         triangle = new Triplet<>(v1, v2, v3);
         R = false;
     }
