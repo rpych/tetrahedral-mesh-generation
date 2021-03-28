@@ -4,14 +4,15 @@ import common.BreakingStats;
 import common.LFunction;
 import logger.MeshLogger;
 import model.*;
+import model.helpers.BreakSimulationPath;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
+import parallel.BreakingSimulator;
 import parallel.TetrahedraGenerator;
 import visualization.MatlabVisualizer;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 import static common.Utils.isEdgeBetween;
 
@@ -19,7 +20,8 @@ public class TransformatorForLayers implements ITransformator{
     public ModelGraph graph;
     public Stack<GraphEdge> hangingEdges;
     public static Integer counter = 0;
-    private TetrahedraGenManager tetGenManager;
+    private TetThreadPoolManager tetGenManager;
+    private Map<String, List<BreakSimulationPath>> breakSimulationPaths;
 
     private BreakingStats stats;
     MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
@@ -28,8 +30,9 @@ public class TransformatorForLayers implements ITransformator{
     public TransformatorForLayers(ModelGraph graph, BreakingStats stats) {
         this.graph = graph;
         this.hangingEdges = new Stack<GraphEdge>();
-        this.tetGenManager = new TetrahedraGenManager();
+        this.tetGenManager = new TetThreadPoolManager();
         this.stats = stats;
+        this.breakSimulationPaths = new ConcurrentSkipListMap<>();
     }
 
     public ModelGraph transform() {
@@ -40,22 +43,27 @@ public class TransformatorForLayers implements ITransformator{
         Optional<FaceNode> face = findFaceToBreak(graph);
         counter  = 0;
         while(face.isPresent()){
-            graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
-            counter++;
-            while( !hangingEdges.empty() ){
-                System.out.println("STACK = "+ hangingEdges.peek().getId());
-                Optional<FaceNode> faceHN = findFaceWithHangingNode(graph);
-                if(!faceHN.isPresent()) {
-                    hangingEdges.pop();
-                    System.out.println("Stack not empty but hanging node not found");
-                    continue;
-                }
-                graph = processLastHangingNode(graph, faceHN.get());
-                graph = addNewFaces(graph);
-            }
+//            graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
+//            counter++;
+//            while( !hangingEdges.empty() ){
+//                System.out.println("STACK = "+ hangingEdges.peek().getId());
+//                Optional<FaceNode> faceHN = findFaceWithHangingNode(graph);
+//                if(!faceHN.isPresent()) {
+//                    hangingEdges.pop();
+//                    System.out.println("Stack not empty but hanging node not found");
+//                    continue;
+//                }
+//                graph = processLastHangingNode(graph, faceHN.get());
+//                graph = addNewFaces(graph);
+//            }
+            runBreakingSimulations(face);
             graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph); //face on different layers
+            if(counter == 0 ) {
+                this.tetGenManager.shutdownThreadPool();
+                break;
+            }
 
             //breaking ratio checking
             stats.checkAdaptationProperties(graph);
@@ -86,6 +94,13 @@ public class TransformatorForLayers implements ITransformator{
 
         }
         return graph;
+    }
+
+    public void runBreakingSimulations(Optional<FaceNode> face){
+        List<FaceNode> faces = new LinkedList<>();
+        for(int i=0;i<6;i++)
+            faces.add(face.get());
+        this.tetGenManager.createBreakingSimulationTasks(this, faces);
     }
 
     public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
@@ -288,7 +303,7 @@ public class TransformatorForLayers implements ITransformator{
         graph.clearInteriorNodes();
         //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
         //return graph.createInteriorNodesForNewlyFoundSubGraphs();
-        tetGenManager.createTasksForThreadPool(graph.getFacesNum());
+        tetGenManager.createGenerationTasks(graph.getFacesNum());
         return graph;
     }
 
@@ -312,11 +327,11 @@ public class TransformatorForLayers implements ITransformator{
     }
 
     //inner class
-    private class TetrahedraGenManager{
+    private class TetThreadPoolManager {
         final Integer POOL_SIZE = 6;
         ExecutorService service = Executors.newFixedThreadPool(POOL_SIZE);
 
-        private void createTasksForThreadPool(Integer facesCollectionSize){
+        private void createGenerationTasks(Integer facesCollectionSize){
             int facesPerThread = facesCollectionSize / POOL_SIZE;
             Collection< Callable<Integer> > taskRes = new LinkedList<>();
 
@@ -338,6 +353,19 @@ public class TransformatorForLayers implements ITransformator{
 
         }
 
+        private void createBreakingSimulationTasks(TransformatorForLayers transformator, List<FaceNode> faces){
+            Collection< Callable<Integer> > taskRes = new LinkedList<>();
+            for (int i = 0; i < POOL_SIZE; ++i){
+                //System.out.println("ELEMENT = "+ faces.get(i).getId());
+                taskRes.add(new BreakingSimulator(transformator, faces.get(i).getId()));
+            }
+            try {
+                List<Future<Integer>> futures = service.invokeAll(taskRes);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         private void shutdownThreadPool(){
             service.shutdown();
             try {
@@ -348,6 +376,11 @@ public class TransformatorForLayers implements ITransformator{
                 service.shutdownNow();
             }
         }
+    }
+
+    public void updateSimulationInfo(String threadId, List<BreakSimulationPath> path){
+        this.breakSimulationPaths.put(threadId, path);
+        System.out.println("ThreadName = "+ threadId + ", PATH = "+ path.toString());
     }
 
 }
