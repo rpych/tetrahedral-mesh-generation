@@ -23,6 +23,14 @@ public class FaceNode extends GraphNode {
         R = false;
     }
 
+    public FaceNode(FaceNode original, Map<String, Vertex> vertices){
+        super(original.id, FACE_SYMBOL, original.getCoordinates());
+        this.R = false;
+        Vertex v1 = vertices.get(original.getTriangle().getValue0().getId());
+        Vertex v2 = vertices.get(original.getTriangle().getValue1().getId());
+        Vertex v3 = vertices.get(original.getTriangle().getValue2().getId());
+        this.triangle = new Triplet<>(v1, v2, v3);
+    }
 
     public Triplet<Vertex, Vertex, Vertex> getTriangle(){
         return triangle;
@@ -145,6 +153,11 @@ public class FaceNode extends GraphNode {
         return (fv0.getId().equals(thisv0.getId()) || fv0.getId().equals(thisv1.getId()) || fv0.getId().equals(thisv2.getId())) &&
                 (fv1.getId().equals(thisv0.getId()) || fv1.getId().equals(thisv1.getId()) || fv1.getId().equals(thisv2.getId())) &&
                 (fv2.getId().equals(thisv0.getId()) || fv2.getId().equals(thisv1.getId()) || fv2.getId().equals(thisv2.getId()));
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(id);
     }
 
 

@@ -8,6 +8,11 @@ public class Vertex extends GraphNode {
         super(graph, id, VERTEX_SYMBOL, coordinates);
     }
 
+    /*copy ctor, neighborEdgeList filled during graph edges copying */
+    public Vertex(Vertex original){
+        super(original.id, VERTEX_SYMBOL, original.getCoordinates());
+    }
+
     public static class VertexBuilder {
 
         private final ModelGraph graph;

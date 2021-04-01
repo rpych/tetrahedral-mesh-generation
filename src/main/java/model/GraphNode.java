@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import org.javatuples.Pair;
 
 public abstract class GraphNode {
-
     private final String symbol;
 
     private Coordinates coordinates;

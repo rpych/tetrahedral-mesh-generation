@@ -2,7 +2,9 @@ package model;
 
 import org.javatuples.Pair;
 
-public class GraphEdge { //extends AbstractEdge
+import java.util.Map;
+
+public class GraphEdge {
 
     private final Pair<GraphNode, GraphNode> edgeNodes;
 
@@ -14,6 +16,14 @@ public class GraphEdge { //extends AbstractEdge
         this.id = id;
         this.edgeNodes = edgeNodes;
         this.border = border;
+    }
+
+    public GraphEdge(GraphEdge original, Map<String, Vertex> vertices){
+        this.id = original.id;
+        this.border = original.border;
+        Vertex source = vertices.get(original.getEdgeNodes().getValue0().getId());
+        Vertex target = vertices.get(original.getEdgeNodes().getValue1().getId());
+        this.edgeNodes = new Pair<>(source, target);
     }
 
     public Pair<GraphNode, GraphNode> getEdgeNodes() {
