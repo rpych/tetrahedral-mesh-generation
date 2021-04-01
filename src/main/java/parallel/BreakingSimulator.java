@@ -2,7 +2,8 @@ package parallel;
 
 import controller.TransformatorForLayers;
 import model.*;
-import model.helpers.BreakSimulationPath;
+import model.helpers.BreakConflictContainer;
+import model.helpers.BreakSimulationNode;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -19,7 +20,8 @@ public class BreakingSimulator implements Callable<Integer> {
     private ModelGraph graph;
     private Stack<GraphEdge> hangingEdges;
     private Optional<FaceNode> startFace;
-    private List<BreakSimulationPath> simPaths;
+    private List<BreakSimulationNode> simPaths;
+    private BreakConflictContainer conflictContainer;
     private int step = 0;
 
     public BreakingSimulator(TransformatorForLayers transformator, String startFaceId){
@@ -30,14 +32,19 @@ public class BreakingSimulator implements Callable<Integer> {
         this.startFace = this.graph.getFace(startFaceId);
         //System.out.println("FACE IN THREAD = "+ this.startFace.get().getId());
         this.simPaths = new LinkedList<>();
+        conflictContainer = new BreakConflictContainer();
         this.threadName = "";
+
     }
 
     @Override
     public Integer call(){
         threadName = Thread.currentThread().getName();
+        conflictContainer.setThreadName(threadName);
         transform();
-        updateObserver();
+        updateObserversSimulationPaths();
+        findConflictsInSimulationPath();
+        updateObserversThreadsConflicts();
         return 0;
     }
 
@@ -66,9 +73,39 @@ public class BreakingSimulator implements Callable<Integer> {
         return graph;
     }
 
-    public void updateObserver(){
+    public void updateObserversSimulationPaths(){
         //System.out.println("PATHS in THREAD = "+ simPaths.toString());
-        observer.updateSimulationInfo(threadName, this.simPaths);
+        observer.updateSimulationPathInfo(threadName, this.simPaths);
+    }
+
+    public void updateObserversThreadsConflicts(){
+        observer.updateConflictInfo(conflictContainer);
+    }
+
+    public void findConflictsInSimulationPath(){
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Sleep time elapsed = " + Thread.currentThread().getName());
+        List<BreakSimulationNode> simulationPath =  this.observer.breakSimulationPaths.get(this.threadName);
+        for(Map.Entry<String, List<BreakSimulationNode>> breakInfo: this.observer.breakSimulationPaths.entrySet()){
+            if(threadName.equals(breakInfo.getKey())) continue;
+
+            findConflictsWithOtherThreads(breakInfo.getKey(), breakInfo.getValue(), simulationPath);
+        }
+    }
+
+    public void findConflictsWithOtherThreads(String otherThreadName, List<BreakSimulationNode> breakPath, List<BreakSimulationNode> ownBreakPath){
+        for(BreakSimulationNode ownNode: ownBreakPath){
+            for(BreakSimulationNode otherNode: breakPath){
+                if(ownNode.equals(otherNode)){
+                    conflictContainer.addConflictWithThread(otherThreadName, ownNode);
+                    return;
+                }
+            }
+        }
     }
 
     /*public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
@@ -84,6 +121,7 @@ public class BreakingSimulator implements Callable<Integer> {
         double longestEdgeLen = 0.0;
         for(FaceNode face: graph.getFaces()){
             if(face.containsVertices(v0, v1) && !graph.areVertexesLinked(face)){
+                //System.out.println("TUTAJ");
                 Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(face);
                 double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
                 if(len > longestEdgeLen){
@@ -102,7 +140,7 @@ public class BreakingSimulator implements Callable<Integer> {
         graph = performBreaking(graph, vOpposite, longestEdge);
         System.out.println("HN::longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
 
-        simPaths.add(new BreakSimulationPath(step, face, longestEdge));
+        simPaths.add(new BreakSimulationNode(step, face, longestEdge));
 
         if(isLastHNRefined(longestEdge) && !existsFaceWithEdge(graph, longestEdge)){
             hangingEdges.pop();
@@ -130,7 +168,7 @@ public class BreakingSimulator implements Callable<Integer> {
         Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
         graph = performBreaking(graph, vOpposite, longestEdge);
 
-        simPaths.add(new BreakSimulationPath(step, face, longestEdge));
+        simPaths.add(new BreakSimulationNode(step, face, longestEdge));
 
         System.out.println("longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
         hangingEdges.push(longestEdge);

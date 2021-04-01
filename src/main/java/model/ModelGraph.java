@@ -34,10 +34,11 @@ public class ModelGraph extends Graph {
 
     public ModelGraph(ModelGraph graph) {
         super(graph.id + 1);
-        graph.vertices.values().forEach(this::insertVertex);
-        graph.faces.values().forEach(this::insertFace);
-        graph.interiorNodes.values().forEach(this::insertInteriorNode);
-        graph.edges.values().forEach(this::insertEdge);
+        graph.vertices.values().forEach(this::insertVertexCopy);
+        graph.faces.values().forEach(this::insertFaceCopy);
+        //graph.interiorNodes.values().forEach(this::insertInteriorNode);
+        graph.edges.values().forEach(this::insertEdgeCopy);
+        System.out.println("VERT_SIZE = "+ vertices.size() + ", FACES_SIZE = "+ faces.size() + ", INT_SIZE = "+ interiorNodes.size());
     }
 
     public Optional<GraphEdge> getEdgeBetweenNodes(Vertex v1, Vertex v2) {
@@ -48,6 +49,11 @@ public class ModelGraph extends Graph {
     public Vertex insertVertex(Vertex vertex) {
         vertices.put(vertex.getId(), vertex);
         return vertex;
+    }
+
+    public Vertex insertVertexCopy(Vertex vertex) {
+        Vertex copy = new Vertex(vertex);
+        return insertVertex(copy);
     }
 
     public Vertex insertVertex(String id, Coordinates coordinates) {
@@ -94,8 +100,13 @@ public class ModelGraph extends Graph {
         return Optional.empty();
     }
 
+    public FaceNode insertFaceCopy(FaceNode face){
+        FaceNode copy = new FaceNode(face, vertices);
+        return insertFace(copy);
+    }
+
     public FaceNode insertFace(FaceNode faceNode) {
-        faces.put(id, faceNode);
+        faces.put(faceNode.getId(), faceNode);
         return faceNode;
     }
 
@@ -137,6 +148,12 @@ public class ModelGraph extends Graph {
         faces.remove(id);
     }
 
+    //call only after inserting vertices
+    public GraphEdge insertEdgeCopy(GraphEdge edge){
+       GraphEdge copy = new GraphEdge(edge, this.vertices);
+       return insertEdge(copy);
+    }
+
     public GraphEdge insertEdge(String id, GraphNode n1, GraphNode n2, boolean border) {
         return insertEdge(id, n1, n2, border, null);
     }
@@ -148,7 +165,7 @@ public class ModelGraph extends Graph {
 
     public GraphEdge insertEdgeAutoNamedOrGet(GraphNode n1, GraphNode n2, boolean border) {
         String edgeName = "E" + n1.getId() + "to" + n2.getId();
-        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2);
+        Optional<GraphEdge> optEdge = getEdgeBetweenNodes((Vertex)n1, (Vertex)n2); //check is not based on edgeName
         if(optEdge.isPresent())
             return optEdge.get();
         return insertEdge(edgeName, n1, n2, border, null);
