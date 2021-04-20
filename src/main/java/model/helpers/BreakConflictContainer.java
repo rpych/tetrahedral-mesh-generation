@@ -1,5 +1,7 @@
 package model.helpers;
 
+import model.ModelGraph;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -20,6 +22,14 @@ public class BreakConflictContainer {
         this.threadName = threadName;
     }
 
+    public String getThreadName() {
+        return threadName;
+    }
+
+    public int getFirstConflictStepNoWithOtherThreads() {
+        return firstConflictStepNoWithOtherThreads;
+    }
+
     public void addConflictWithThread(String otherThreadName, BreakSimulationNode node){
         if(threadFirstConflicts.size() == 0){
             firstConflictStepNoWithOtherThreads = node.getStepNo();
@@ -32,6 +42,6 @@ public class BreakConflictContainer {
 
     @Override
     public String toString(){
-        return threadName + "::CONF_SIZE=" + threadFirstConflicts.size() + "::FIRST_CONFLICT=" + firstConflictStepNoWithOtherThreads;
+        return threadName + "::CONF_SIZE=" + threadFirstConflicts.size() + "::FIRST_CONFLICT=" + firstConflictStepNoWithOtherThreads + "::CONF="+threadFirstConflicts.toString();
     }
 }

@@ -30,7 +30,7 @@ public class BreakingStats {
 
         for(FaceNode face: graph.getFaces()){
             if(!graph.areVertexesLinked(face)){
-                System.out.println("Face exists but its vertices are not linked !!!!!");
+                System.out.println("Face exists but its vertices are not linked !!!!! "+ face.getId());
             }
         }
     }
@@ -46,19 +46,22 @@ public class BreakingStats {
             counter += out;
             if(out == 0) counter += 1;
             facesInInteriorCount.put(face.getId(), out);
-            if(out == 0 ){
+            /*if(out == 0 ){
                 graph.debugFaces.add(face);
-            }
+            }*/
         }
         boolean f = true;
         for(Map.Entry<String, Integer> entry: facesInInteriorCount.entrySet()){
             if(entry.getValue().equals(0) || entry.getValue() > 2){
                 f = false;
                 System.out.println("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
+                //TransformatorForLayers.meshLogger.log("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
             }
         }
         System.out.println("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +
                 " InteriorNodes*4 = "+ graph.getInteriorNodes().size()*4);
+        /*TransformatorForLayers.meshLogger.log("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +
+                " InteriorNodes*4 = "+ graph.getInteriorNodes().size()*4);*/
         return f;
     }
 

@@ -6,6 +6,7 @@ import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
@@ -14,17 +15,17 @@ import static common.Utils.isEdgeBetween;
 
 public class ModelGraph extends Graph {
 
-    private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
+    private Map<String, Vertex> vertices = new ConcurrentHashMap<>();
 
-    private Map<String, FaceNode> faces = new ConcurrentSkipListMap<>();
+    public Map<String, FaceNode> faces = new ConcurrentHashMap<>();
 
-    private Map<String, GraphEdge> edges = new ConcurrentSkipListMap<>();
+    private Map<String, GraphEdge> edges = new ConcurrentHashMap<>();
 
-    private Map<String, InteriorNode> interiorNodes = new ConcurrentSkipListMap<>();
+    private Map<String, InteriorNode> interiorNodes = new ConcurrentHashMap<>();
 
-    private Map<String, InteriorNode> interiorNodesOld = new ConcurrentSkipListMap<>();
+    private Map<String, InteriorNode> interiorNodesOld = new ConcurrentHashMap<>();
 
-    public List<FaceNode> debugFaces = new LinkedList<>();
+    //public List<FaceNode> debugFaces = new LinkedList<>();
 
     //public Integer falseEdgesCounter = 0;
 
@@ -46,7 +47,7 @@ public class ModelGraph extends Graph {
         return edge.map(GraphEdge::getId).flatMap(this::getEdgeById); //Element
     }
 
-    public Vertex insertVertex(Vertex vertex) {
+    public synchronized Vertex insertVertex(Vertex vertex) {
         vertices.put(vertex.getId(), vertex);
         return vertex;
     }
@@ -84,7 +85,7 @@ public class ModelGraph extends Graph {
         return insertVertex(vertexName, coordinates);
     }
 
-    public Optional<Vertex> removeVertex(String id) {
+    public synchronized Optional<Vertex> removeVertex(String id) {
         Vertex vertex = vertices.remove(id);
         if (vertex != null) {
             this.removeVertex(id);
@@ -105,7 +106,7 @@ public class ModelGraph extends Graph {
         return insertFace(copy);
     }
 
-    public FaceNode insertFace(FaceNode faceNode) {
+    public synchronized FaceNode insertFace(FaceNode faceNode) {
         faces.put(faceNode.getId(), faceNode);
         return faceNode;
     }
@@ -115,7 +116,7 @@ public class ModelGraph extends Graph {
         return insertFace(faceNode);
     }
 
-    public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
+    public synchronized FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
         FaceNode faceNode = new FaceNode(id, v1, v2, v3);
         faces.put(id, faceNode);
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
@@ -139,7 +140,7 @@ public class ModelGraph extends Graph {
     }
 
     
-    public void removeFace(String id) {
+    public synchronized void removeFace(String id) {
         List<String> edgesToRemove = edges.values().stream()
                 .filter(graphEdge -> graphEdge.getEdgeNodes().contains(faces.get(id)))
                 .map(GraphEdge::getId)
@@ -176,7 +177,7 @@ public class ModelGraph extends Graph {
         return insertEdge(graphEdge);
     }
 
-    public GraphEdge insertEdge(GraphEdge graphEdge) {
+    public synchronized GraphEdge insertEdge(GraphEdge graphEdge) {
         graphEdge.getEdgeNodes().getValue0().addNeighbourEdge(graphEdge);
         graphEdge.getEdgeNodes().getValue1().addNeighbourEdge(graphEdge);
         edges.put(graphEdge.getId(), graphEdge);
@@ -188,7 +189,7 @@ public class ModelGraph extends Graph {
         deleteEdge(edge.getId());
     }
 
-    public void deleteEdge(String edgeId){
+    public synchronized void deleteEdge(String edgeId){
         GraphEdge graphEdge = edges.remove(edgeId);
         graphEdge.getEdgeNodes().getValue0().removeNeighbourEdge(graphEdge);
         graphEdge.getEdgeNodes().getValue1().removeNeighbourEdge(graphEdge);
@@ -257,6 +258,9 @@ public class ModelGraph extends Graph {
     public int getFacesNum() { return faces.size(); }
 
     public Optional<FaceNode> getFace(String id) {
+
+        //FaceNode f = faces.get(id);
+        //System.out.println("JEZYK " +id + "FACE = "+ f.getId());
         return Optional.ofNullable(faces.get(id));
     }
     
@@ -377,16 +381,18 @@ public class ModelGraph extends Graph {
 		s.add(v1);
 		s.add(v2);
 		s.add(v3);
-    	for(FaceNode f : faces.values()) {
-    		Triplet<Vertex, Vertex, Vertex> traingle = f.getTriangle();
-    		Set<Vertex> stmp = new HashSet<Vertex>();
-    		stmp.add(traingle.getValue0());
-    		stmp.add(traingle.getValue1());
-    		stmp.add(traingle.getValue2());
-    		if(s.equals(stmp)) {
-    			return true;
-    		}
-    	}
+		synchronized(faces) {
+            for (FaceNode f : faces.values()) {
+                Triplet<Vertex, Vertex, Vertex> traingle = f.getTriangle();
+                Set<Vertex> stmp = new HashSet<Vertex>();
+                stmp.add(traingle.getValue0());
+                stmp.add(traingle.getValue1());
+                stmp.add(traingle.getValue2());
+                if (s.equals(stmp)) {
+                    return true;
+                }
+            }
+        }
     	return false;
     }
 

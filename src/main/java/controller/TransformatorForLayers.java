@@ -5,16 +5,17 @@ import common.BreakingStats;
 import common.LFunction;
 import logger.MeshLogger;
 import model.*;
-import model.helpers.BreakConflictContainer;
-import model.helpers.BreakSimulationNode;
+import model.helpers.*;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
+import parallel.BreakingGenerator;
 import parallel.BreakingSimulator;
 import parallel.TetrahedraGenerator;
 import visualization.MatlabVisualizer;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 import static common.Utils.isEdgeBetween;
 
@@ -23,11 +24,14 @@ public class TransformatorForLayers implements ITransformator{
     public Stack<GraphEdge> hangingEdges;
     public static Integer counter = 0;
     private TetThreadPoolManager tetGenManager;
-    public Map<String, List<BreakSimulationNode>> breakSimulationPaths;
+    public Map<String, Deque<BreakSimulationNode>> breakSimulationPaths;
     public Deque<BreakConflictContainer> threadsConflicts;
+    public ConcurrentMap<String, Boolean> threadsExecutionFinished;
+    public ThreadLockContainer lockContainer;
 
     private BreakingStats stats;
-    MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
+   /* public static MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER)
+                                              .setLevel(Level.INFO);*/
 
 
     public TransformatorForLayers(ModelGraph graph, BreakingStats stats) {
@@ -37,6 +41,7 @@ public class TransformatorForLayers implements ITransformator{
         this.stats = stats;
         this.breakSimulationPaths = new ConcurrentSkipListMap<>();
         this.threadsConflicts = new ConcurrentLinkedDeque<>();
+        this.threadsExecutionFinished = new ConcurrentSkipListMap<>();
     }
 
     public ModelGraph transform() {
@@ -45,16 +50,20 @@ public class TransformatorForLayers implements ITransformator{
 
     public ModelGraph transform(ModelGraph graph) {
         Set<FaceNode> faces = findFacesToBreak(graph);
-        counter  = 0;
+        counter = 0;
         while(!faces.isEmpty()){
             runBreakingSimulations(faces);
+            scheduleThreadTasks();
+
             graph = createNewInteriorNodes();
+            clearParallelStructures();
             faces = findFacesToBreak(graph);
             counter++;
-            if(counter == 20 ) {
+            /*if(counter == 10 ) {
+
                 this.tetGenManager.shutdownThreadPool();
                 break;
-            }
+            }*/
 
             //breaking ratio checking
             stats.checkAdaptationProperties(graph);
@@ -62,30 +71,82 @@ public class TransformatorForLayers implements ITransformator{
             if(counter % 20 == 0 || counter <= 300) {
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
+                    //TransformatorForLayers.meshLogger.log("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 //stats.checkInteriorNodesMinMaxBreakingRatio(graph);
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) );
+                /*TransformatorForLayers.meshLogger.log("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()));*/
             }
             if (isEnoughBreakingAccuracy(graph)) {
                 tetGenManager.shutdownThreadPool();
                 System.out.println("ENOUGH accuracy met");
+                //TransformatorForLayers.meshLogger.log("ENOUGH accuracy met");
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
+                    ///TransformatorForLayers.meshLogger.log("Some FACES do not belong to any interiorNode " + counter);
                 } else
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()));
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid10_03_20_Par_" + counter);
+                /*TransformatorForLayers.meshLogger.log("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
+                        ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()));*/
+                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid18_04_21_Par_" + counter);
                 matlabVisualizer.saveCode();
                 break;
             }
-            //stats.checkFacesConnected(graph);
+            stats.checkFacesConnected(graph);
 
         }
         return graph;
     }
+
+    public void setThreadExecutionFinished(String threadName){
+        threadsExecutionFinished.put(threadName, true);
+        System.out.println("setThreadExecutionFinished threadName = "+ threadName + ", MAP = "+ threadsExecutionFinished);
+    }
+
+    public boolean getIsThreadExecutionFinished(String threadName){
+        return threadsExecutionFinished.get(threadName);
+    }
+
+    public Map<String, Boolean> IsThreadExecutionFinished(){
+        return threadsExecutionFinished;
+    }
+
+    private void clearParallelStructures(){
+        breakSimulationPaths.clear();
+        threadsConflicts.clear();
+    }
+
+    public void scheduleThreadTasks(){
+        /*for(String threadName: breakSimulationPaths.keySet()){
+            threadsExecutionFinished.put(threadName, false);
+        }*/
+        List<BreakConflictContainer> breakInfoWithoutConflict = processBreakInfoWithoutConflicts();
+        //ThreadsDependencyGraph threadsDependencyGraph = new ThreadsDependencyGraph(threadsConflicts, breakInfoWithoutConflict);
+        tetGenManager.createBreakingGenerationTasks(graph, breakSimulationPaths, this,
+                                                    breakInfoWithoutConflict, /*threadsDependencyGraph,*/ threadsExecutionFinished);
+    }
+
+    List<BreakConflictContainer> processBreakInfoWithoutConflicts(){
+        List<BreakConflictContainer> breakInfoWithoutConf = new LinkedList<>();
+        for(BreakConflictContainer threadConflict: threadsConflicts){
+            //no conflict
+            if(threadConflict.firstConflictStepNoWithOtherThreads < 0) {
+                breakInfoWithoutConf.add(threadConflict);
+            }
+        }
+
+        /*for(BreakConflictContainer brConfToRemove: breakInfoWithoutConf){
+            threadsConflicts.remove(brConfToRemove);
+        }*/
+        return breakInfoWithoutConf;
+    }
+
+
 
     public void runBreakingSimulations(Set<FaceNode> faces){
         this.tetGenManager.createBreakingSimulationTasks(this, faces);
@@ -244,7 +305,7 @@ public class TransformatorForLayers implements ITransformator{
 
     public Pair<FaceNode, Double> getMinsFromMap(Map<FaceNode, Double> facesMinEdges){
         FaceNode minFace = null;
-        Double minEdgeLen = 1000.0;
+        Double minEdgeLen = 10000.0;
         for(Map.Entry<FaceNode, Double> el: facesMinEdges.entrySet()){
             if(el.getValue() < minEdgeLen) {
                 minEdgeLen = el.getValue();
@@ -334,11 +395,24 @@ public class TransformatorForLayers implements ITransformator{
         return graph;
     }
 
+    /*public ModelGraph getGraphForThread(String threadName){
+        for(BreakConflictContainer cont: threadsConflicts){
+            if(cont.getThreadName().equals(threadName)) return cont.graph;
+        }
+        return null;
+    }*/
+
+    public boolean isThreadIndependent(List<BreakConflictContainer> breakInfoWithoutConflict, String threadName){
+        for(BreakConflictContainer cont: breakInfoWithoutConflict){
+            if(cont.getThreadName().equals(threadName)) return true;
+        }
+        return false;
+    }
+
     //checks
 
-
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 60, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -374,7 +448,10 @@ public class TransformatorForLayers implements ITransformator{
 
             try {
                 List<Future<Integer>> futures = service.invokeAll(taskRes);
-            } catch (InterruptedException e) {
+                for(Future<Integer> future: futures){
+                    future.get();
+                }
+            } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
 
@@ -382,15 +459,73 @@ public class TransformatorForLayers implements ITransformator{
 
         private void createBreakingSimulationTasks(TransformatorForLayers transformator, Set<FaceNode> faces){
             Collection< Callable<Integer> > taskRes = new LinkedList<>();
+            CyclicBarrier cyclicBarrier = new CyclicBarrier(Config.THREADS_IN_POOL);
             for(FaceNode face: faces){
-                //System.out.println("ELEMENT = "+ face.getId());
-                taskRes.add(new BreakingSimulator(transformator, face.getId()));
+                taskRes.add(new BreakingSimulator(transformator, face.getId(), cyclicBarrier));
             }
             try {
                 List<Future<Integer>> futures = service.invokeAll(taskRes);
-            } catch (InterruptedException e) {
+                for(Future<Integer> future: futures){
+                    System.out.println("FUTURE" + future.get());
+                }
+            } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
+        }
+
+        ///*ThreadsDependencyGraph threadsDependencyGraph,*/
+        private void createBreakingGenerationTasks(ModelGraph graph, Map<String, Deque<BreakSimulationNode>> breakSimulationPaths,
+                                                   TransformatorForLayers transformator,
+                                                   List<BreakConflictContainer> breakInfoWithoutConflict,
+                                                   ConcurrentMap<String, Boolean> threadsExecutionFinished){
+            Collection< Callable<Integer> > taskRes = new LinkedList<>();
+            /*for(BreakConflictContainer cont: breakInfoWithoutConflict){
+                taskRes.add(new BreakingGenerator(graph, breakSimulationPaths, threadsExecutionFinished, threadsDependencyGraph));
+            }*/
+            //Map<String, String> topologicalOrderSuperiors = threadsDependencyGraph.getDirectSuperiorThreadInTSMap();
+            //System.out.println("SUP = "+ topologicalOrderSuperiors);
+            //lockContainer = new ThreadLockContainer(threadsExecutionFinished, graph);
+            System.out.println("INDEPENDENT SIZE = "+ breakInfoWithoutConflict.size());
+            for(BreakConflictContainer threadInfo: breakInfoWithoutConflict){
+                FaceNode startFace = graph.getFace(breakSimulationPaths.get(threadInfo.getThreadName()).getFirst().getFace().getId()).get();
+                taskRes.add(new BreakingGenerator(graph, breakSimulationPaths, startFace, breakSimulationPaths.get(threadInfo.getThreadName()),
+                        lockContainer));
+                //ModelGraph gr = getGraphForThread(threadInfo.getKey());
+                System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
+            }
+            if(!taskRes.isEmpty()) {
+                System.out.println("RUN NON-EMPTY SERVICE "+ counter);
+                try {
+                    List<Future<Integer>> futures = service.invokeAll(taskRes);
+                    for(Future<Integer> future: futures){
+                        future.get();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            int c = 0;
+            /*for(Map.Entry<String, String> threadInfo: topologicalOrderSuperiors.entrySet()){
+                if(threadsDependencyGraph.isThreadNodeIndependent(threadInfo.getKey())) continue;
+
+                Optional<FaceNode> startFace = graph.getFace(breakSimulationPaths.get(threadInfo.getKey()).get(0).getFace().getId());
+                if(!startFace.isPresent()) continue;
+                BreakGenerationProvider breakGen = new BreakGenerationProvider(graph, startFace.get());
+                breakGen.transform();
+                c++;
+                System.out.println("RPYCH::Breaking step "+ counter + " c = " + c);
+            }*/
+            for(String threadName: breakSimulationPaths.keySet()){
+                if(isThreadIndependent(breakInfoWithoutConflict, threadName)) continue;
+
+                Optional<FaceNode> startFace = graph.getFace(breakSimulationPaths.get(threadName).getFirst().getFace().getId());
+                if(!startFace.isPresent()) continue;
+                BreakGenerationProvider breakGen = new BreakGenerationProvider(graph, startFace.get());
+                breakGen.transform();
+                c++;
+                System.out.println("RPYCH::Breaking step "+ counter + " c = " + c);
+            }
+            System.out.println("Breaking step ended "+ counter);
         }
 
         private void shutdownThreadPool(){
@@ -405,14 +540,16 @@ public class TransformatorForLayers implements ITransformator{
         }
     }
 
-    public void updateSimulationPathInfo(String threadId, List<BreakSimulationNode> path){
+    public void updateSimulationPathInfo(String threadId, Deque<BreakSimulationNode> path){
         this.breakSimulationPaths.put(threadId, path);
         System.out.println("ThreadName = "+ threadId + ", PATH = "+ path.toString());
+        //TransformatorForLayers.meshLogger.log("ThreadName = "+ threadId + ", PATH = "+ path.toString());
     }
 
     public void updateConflictInfo(BreakConflictContainer container){
         this.threadsConflicts.add(container);
-        System.out.println("CONFLICT::ThreadName = "+ container.threadName + ", PATH = "+ container.toString());
+        System.out.println("CONFLICT::ThreadName = "+ counter + " "+  container.threadName + ", PATH = "+ container.toString());
+        //TransformatorForLayers.meshLogger.log("CONFLICT::ThreadName = "+ counter + " "+  container.threadName + ", PATH = "+ container.toString());
     }
 
 }

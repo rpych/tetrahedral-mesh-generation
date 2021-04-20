@@ -65,15 +65,19 @@ public abstract class GraphNode {
         this.id = id;
     }
 
-    public void addNeighbourEdge(GraphEdge edge){
-        if( !neighborEdgeList.contains(edge) ){
-            this.neighborEdgeList.add(edge);
+    public synchronized void addNeighbourEdge(GraphEdge edge){
+        synchronized(neighborEdgeList) {
+            if (!neighborEdgeList.contains(edge)) {
+                this.neighborEdgeList.add(edge);
+            }
         }
     }
 
-    public void removeNeighbourEdge(GraphEdge edge){
-        if( neighborEdgeList.contains(edge) ){
-            this.neighborEdgeList.remove(edge);
+    public synchronized void removeNeighbourEdge(GraphEdge edge){
+        synchronized(neighborEdgeList) {
+            if (neighborEdgeList.contains(edge)) {
+                this.neighborEdgeList.remove(edge);
+            }
         }
     }
 
@@ -88,7 +92,7 @@ public abstract class GraphNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(symbol, id);
+        return Objects.hash(id);
     }
 
     public Collection<GraphNode> getAdjacentNodes(ModelGraph graph){
@@ -106,10 +110,12 @@ public abstract class GraphNode {
 	}
 
     public GraphEdge getEdgeBetween(GraphNode node) {
-        for(GraphEdge e : this.neighborEdgeList){
-            if((e.getEdgeNodes().getValue0().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue1().getId())) ||
-                    (e.getEdgeNodes().getValue1().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue0().getId()))){
-                return e;
+        synchronized(neighborEdgeList) {
+            for (GraphEdge e : this.neighborEdgeList) {
+                if ((e.getEdgeNodes().getValue0().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue1().getId())) ||
+                        (e.getEdgeNodes().getValue1().getId().equals(node.getId()) && this.id.equals(e.getEdgeNodes().getValue0().getId()))) {
+                    return e;
+                }
             }
         }
         return null;
