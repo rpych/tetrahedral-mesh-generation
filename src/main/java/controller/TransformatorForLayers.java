@@ -27,7 +27,6 @@ public class TransformatorForLayers implements ITransformator{
     public Map<String, Deque<BreakSimulationNode>> breakSimulationPaths;
     public Deque<BreakConflictContainer> threadsConflicts;
     public ConcurrentMap<String, Boolean> threadsExecutionFinished;
-    public ThreadLockContainer lockContainer;
 
     private BreakingStats stats;
    /* public static MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER)
@@ -412,7 +411,7 @@ public class TransformatorForLayers implements ITransformator{
     //checks
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 60, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -488,8 +487,7 @@ public class TransformatorForLayers implements ITransformator{
             System.out.println("INDEPENDENT SIZE = "+ breakInfoWithoutConflict.size());
             for(BreakConflictContainer threadInfo: breakInfoWithoutConflict){
                 FaceNode startFace = graph.getFace(breakSimulationPaths.get(threadInfo.getThreadName()).getFirst().getFace().getId()).get();
-                taskRes.add(new BreakingGenerator(graph, breakSimulationPaths, startFace, breakSimulationPaths.get(threadInfo.getThreadName()),
-                        lockContainer));
+                taskRes.add(new BreakingGenerator(graph, startFace, breakSimulationPaths.get(threadInfo.getThreadName())));
                 //ModelGraph gr = getGraphForThread(threadInfo.getKey());
                 System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
             }

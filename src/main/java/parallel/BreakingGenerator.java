@@ -4,8 +4,6 @@ import controller.TransformatorForLayers;
 import model.*;
 import model.helpers.BreakGenerationProvider;
 import model.helpers.BreakSimulationNode;
-import model.helpers.ThreadLockContainer;
-import model.helpers.ThreadsDependencyGraph;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -35,12 +33,9 @@ public class BreakingGenerator extends BreakGenerationProvider implements Callab
     List<FaceNode> insertedImplicitFaces;
 
     ///*ThreadsDependencyGraph dependencyGraph, Map<String, String> directSuperiorThreadNames,*/
-    public BreakingGenerator(ModelGraph graph, Map<String, Deque<BreakSimulationNode>> breakPaths,
-                             FaceNode startFace, Deque<BreakSimulationNode> simulatedPath,
-                             ThreadLockContainer container){
+    public BreakingGenerator(ModelGraph graph, FaceNode startFace, Deque<BreakSimulationNode> simulatedPath){
         super(graph, startFace);
         this.graph = graph;
-        //this.breakPaths = breakPaths;
         this.dependencyList = new LinkedList<>();
         this.simulatedPath = simulatedPath;
         this.insertedImplicitFaces = new LinkedList<>();
