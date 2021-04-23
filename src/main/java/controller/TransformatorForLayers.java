@@ -26,19 +26,21 @@ public class TransformatorForLayers implements ITransformator{
     private TetThreadPoolManager tetGenManager;
     public Map<String, Deque<BreakSimulationNode>> breakSimulationPaths;
     public Deque<BreakConflictContainer> threadsConflicts;
+    private boolean isEnhanced = false;
 
     private BreakingStats stats;
    /* public static MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER)
                                               .setLevel(Level.INFO);*/
 
 
-    public TransformatorForLayers(ModelGraph graph, BreakingStats stats) {
+    public TransformatorForLayers(ModelGraph graph, BreakingStats stats, boolean isEnhanced) {
         this.graph = graph;
         this.hangingEdges = new Stack<GraphEdge>();
         this.tetGenManager = new TetThreadPoolManager();
         this.stats = stats;
         this.breakSimulationPaths = new ConcurrentSkipListMap<>();
         this.threadsConflicts = new ConcurrentLinkedDeque<>();
+        this.isEnhanced = isEnhanced;
     }
 
     public ModelGraph transform() {
@@ -46,7 +48,7 @@ public class TransformatorForLayers implements ITransformator{
     }
 
     public ModelGraph transform(ModelGraph graph) {
-        Set<FaceNode> faces = findFacesToBreak(graph);
+        List<FaceNode> faces = (isEnhanced) ? findFacesToBreakEnhanced(graph) : findFacesToBreak(graph, Config.THREADS_IN_POOL);
         counter = 0;
         while(!faces.isEmpty()){
             runBreakingSimulations(faces);
@@ -54,7 +56,7 @@ public class TransformatorForLayers implements ITransformator{
 
             graph = createNewInteriorNodes();
             clearParallelStructures();
-            faces = findFacesToBreak(graph);
+            faces = (isEnhanced) ? findFacesToBreakEnhanced(graph) : findFacesToBreak(graph, Config.THREADS_IN_POOL);
             counter++;
 
             //breaking ratio checking
@@ -119,11 +121,36 @@ public class TransformatorForLayers implements ITransformator{
 
 
 
-    public void runBreakingSimulations(Set<FaceNode> faces){
+    public void runBreakingSimulations(List<FaceNode> faces){
         this.tetGenManager.createBreakingSimulationTasks(this, faces);
     }
 
-    private Set<FaceNode> findFacesToBreak(ModelGraph graph) {
+    private List<FaceNode> findFacesToBreakEnhanced(ModelGraph graph){
+        List<FaceNode> candidateFacesList = findFacesToBreak(graph, 2 * Config.THREADS_IN_POOL);
+        FaceNode centralFace = candidateFacesList.get(0);
+        Map<FaceNode, Double> distFromCentreFace = new HashMap<>();
+        for(FaceNode candFace: candidateFacesList){
+            if(candFace.getId().equals(centralFace.getId())) continue;
+            Double dist = Coordinates.distance(centralFace.getCoordinates(), candFace.getCoordinates());
+            distFromCentreFace.put(candFace, dist);
+        }
+
+        List<FaceNode> tempFacesList = new LinkedList<>();
+        distFromCentreFace.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> tempFacesList.add(x.getKey()));
+
+        List<FaceNode> chosenFacesList = new LinkedList<>();
+        chosenFacesList.add(centralFace);
+        for(int i=0;i<Config.THREADS_IN_POOL-1;++i){
+            chosenFacesList.add(tempFacesList.get(i));
+        }
+        return chosenFacesList;
+    }
+
+    //in basic case expectedCandidateSetSize = Config.THREADS_IN_POOL
+    private List<FaceNode> findFacesToBreak(ModelGraph graph, int expectedCandidateSetSize) {
         FaceNode faceWithShortLongestEdge = null;
         double shortLongestEdgeLen = 0.0;
         Map<FaceNode, Double> facesToBreak = new HashMap<>();
@@ -131,10 +158,10 @@ public class TransformatorForLayers implements ITransformator{
             if(checkEdgesOnLayersBorder(graph, faceNode)) {
                 Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(faceNode);
                 double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
-                if(facesToBreak.size() < Config.THREADS_IN_POOL){
+                if(facesToBreak.size() < expectedCandidateSetSize){
                     facesToBreak.put(faceNode, len);
                 }
-                else if(facesToBreak.size() == Config.THREADS_IN_POOL && len > shortLongestEdgeLen){
+                else if(facesToBreak.size() == expectedCandidateSetSize && len > shortLongestEdgeLen){
                     if(facesToBreak.containsKey(faceWithShortLongestEdge)){
                         facesToBreak.remove(faceWithShortLongestEdge);
                         facesToBreak.put(faceNode, len);
@@ -147,7 +174,16 @@ public class TransformatorForLayers implements ITransformator{
         }
         facesToBreak.keySet().forEach(face -> face.setR(true));
 
-        return facesToBreak.keySet();
+        if(!isEnhanced){
+            return new LinkedList<>(facesToBreak.keySet());
+        }
+        LinkedList<FaceNode> sortedFacesByLongestEdge = new LinkedList<>();
+        facesToBreak.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> sortedFacesByLongestEdge.add(x.getKey()));
+
+        return sortedFacesByLongestEdge;
     }
 
     public Pair<FaceNode, Double> getMinsFromMap(Map<FaceNode, Double> facesMinEdges){
@@ -234,7 +270,7 @@ public class TransformatorForLayers implements ITransformator{
     //checks
 
     public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
+        int numOfReqIntNodesBelowThresh = 40, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
             boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
@@ -279,7 +315,7 @@ public class TransformatorForLayers implements ITransformator{
 
         }
 
-        private void createBreakingSimulationTasks(TransformatorForLayers transformator, Set<FaceNode> faces){
+        private void createBreakingSimulationTasks(TransformatorForLayers transformator, List<FaceNode> faces){
             Collection< Callable<Integer> > taskRes = new LinkedList<>();
             CyclicBarrier cyclicBarrier = new CyclicBarrier(Config.THREADS_IN_POOL);
             for(FaceNode face: faces){

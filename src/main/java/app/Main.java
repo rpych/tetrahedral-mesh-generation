@@ -17,7 +17,7 @@ public class Main {
         
         ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
         BreakingStats stats = new BreakingStats(false, true);
-        TransformatorForLayers transformator = new TransformatorForLayers(cuboid, stats);
+        TransformatorForLayers transformator = new TransformatorForLayers(cuboid, stats, true);
         cuboid = transformator.transform();
         MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "vi23_04");
         matlabVisualizer.saveCode();
