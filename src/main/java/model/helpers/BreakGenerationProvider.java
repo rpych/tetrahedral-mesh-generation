@@ -11,16 +11,8 @@ import static common.Utils.isEdgeBetween;
 public class BreakGenerationProvider {
 
     protected ModelGraph graph;
-    //private Map<String, List<BreakSimulationNode>> breakPaths;
-    //private List<String> dependencyList; //list of superior threads to current one
-    //private ThreadsDependencyGraph dependencyGraph;
-    //private Map<String, Boolean> threadsExecutionFinished;
     protected Stack<GraphEdge> hangingEdges;
-    //private Map<String, String> directSuperiorThreadNames;
-    //private ThreadLockContainer lockContainer;
     private FaceNode startFace;
-    //private volatile TransformatorForLayers observer;
-    private boolean visited = false;
     protected int step;
 
 

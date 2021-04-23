@@ -26,7 +26,6 @@ public class TransformatorForLayers implements ITransformator{
     private TetThreadPoolManager tetGenManager;
     public Map<String, Deque<BreakSimulationNode>> breakSimulationPaths;
     public Deque<BreakConflictContainer> threadsConflicts;
-    public ConcurrentMap<String, Boolean> threadsExecutionFinished;
 
     private BreakingStats stats;
    /* public static MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER)
@@ -40,7 +39,6 @@ public class TransformatorForLayers implements ITransformator{
         this.stats = stats;
         this.breakSimulationPaths = new ConcurrentSkipListMap<>();
         this.threadsConflicts = new ConcurrentLinkedDeque<>();
-        this.threadsExecutionFinished = new ConcurrentSkipListMap<>();
     }
 
     public ModelGraph transform() {
@@ -58,11 +56,6 @@ public class TransformatorForLayers implements ITransformator{
             clearParallelStructures();
             faces = findFacesToBreak(graph);
             counter++;
-            /*if(counter == 10 ) {
-
-                this.tetGenManager.shutdownThreadPool();
-                break;
-            }*/
 
             //breaking ratio checking
             stats.checkAdaptationProperties(graph);
@@ -102,32 +95,15 @@ public class TransformatorForLayers implements ITransformator{
         return graph;
     }
 
-    public void setThreadExecutionFinished(String threadName){
-        threadsExecutionFinished.put(threadName, true);
-        System.out.println("setThreadExecutionFinished threadName = "+ threadName + ", MAP = "+ threadsExecutionFinished);
-    }
-
-    public boolean getIsThreadExecutionFinished(String threadName){
-        return threadsExecutionFinished.get(threadName);
-    }
-
-    public Map<String, Boolean> IsThreadExecutionFinished(){
-        return threadsExecutionFinished;
-    }
-
     private void clearParallelStructures(){
         breakSimulationPaths.clear();
         threadsConflicts.clear();
     }
 
     public void scheduleThreadTasks(){
-        /*for(String threadName: breakSimulationPaths.keySet()){
-            threadsExecutionFinished.put(threadName, false);
-        }*/
         List<BreakConflictContainer> breakInfoWithoutConflict = processBreakInfoWithoutConflicts();
-        //ThreadsDependencyGraph threadsDependencyGraph = new ThreadsDependencyGraph(threadsConflicts, breakInfoWithoutConflict);
-        tetGenManager.createBreakingGenerationTasks(graph, breakSimulationPaths, this,
-                                                    breakInfoWithoutConflict, /*threadsDependencyGraph,*/ threadsExecutionFinished);
+
+        tetGenManager.createBreakingGenerationTasks(graph, breakSimulationPaths, breakInfoWithoutConflict);
     }
 
     List<BreakConflictContainer> processBreakInfoWithoutConflicts(){
@@ -138,10 +114,6 @@ public class TransformatorForLayers implements ITransformator{
                 breakInfoWithoutConf.add(threadConflict);
             }
         }
-
-        /*for(BreakConflictContainer brConfToRemove: breakInfoWithoutConf){
-            threadsConflicts.remove(brConfToRemove);
-        }*/
         return breakInfoWithoutConf;
     }
 
@@ -149,130 +121,6 @@ public class TransformatorForLayers implements ITransformator{
 
     public void runBreakingSimulations(Set<FaceNode> faces){
         this.tetGenManager.createBreakingSimulationTasks(this, faces);
-    }
-
-    public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
-        for(FaceNode face: graph.getFaces()){
-            if(face.isR()) return Optional.of(face);
-        }
-        return Optional.empty();
-    }
-
-    public Optional<FaceNode> findFaceWithHangingNode(ModelGraph graph){
-        Vertex v0 = (Vertex)hangingEdges.peek().getEdgeNodes().getValue0(), v1 = (Vertex)hangingEdges.peek().getEdgeNodes().getValue1();
-        FaceNode faceWithLongestEdge = null;
-        double longestEdgeLen = 0.0;
-        for(FaceNode face: graph.getFaces()){
-            if(face.containsVertices(v0, v1) && !graph.areVertexesLinked(face)){
-                Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(face);
-                double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
-                if(len > longestEdgeLen){
-                    faceWithLongestEdge = face;
-                    longestEdgeLen = len;
-                }
-            }
-        }
-        return Optional.ofNullable(faceWithLongestEdge);
-    }
-
-    public ModelGraph processLastHangingNode(ModelGraph graph, FaceNode face){
-        Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(face);
-        GraphEdge longestEdge = graph.insertEdgeAutoNamedOrGet(longEdgeVert.getValue0(), longEdgeVert.getValue1(), false);
-        Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
-        graph = performBreaking(graph, vOpposite, longestEdge);
-        System.out.println("HN::longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
-
-        if(isLastHNRefined(longestEdge) && !existsFaceWithEdge(graph, longestEdge)){
-            hangingEdges.pop();
-        }
-        else if(!isLastHNRefined(longestEdge)){
-            hangingEdges.push(longestEdge);
-        }
-        return graph;
-    }
-
-    public boolean isLastHNRefined(GraphEdge longestEdge){
-        return (hangingEdges.peek().getEdgeNodes().getValue0().getId().equals(longestEdge.getEdgeNodes().getValue0().getId()) ||
-                hangingEdges.peek().getEdgeNodes().getValue0().getId().equals(longestEdge.getEdgeNodes().getValue1().getId())) &&
-                (hangingEdges.peek().getEdgeNodes().getValue1().getId().equals(longestEdge.getEdgeNodes().getValue0().getId()) ||
-                hangingEdges.peek().getEdgeNodes().getValue1().getId().equals(longestEdge.getEdgeNodes().getValue1().getId()));
-    }
-
-    public boolean existsFaceWithEdge(ModelGraph graph, GraphEdge edge){
-        return getFacesWithEdge(graph, edge).size() > 0;
-    }
-
-    public ModelGraph breakFace(ModelGraph graph, FaceNode face){
-        Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(face);
-        GraphEdge longestEdge = graph.getEdgeBetweenNodes(longEdgeVert.getValue0(), longEdgeVert.getValue1()).get();
-        Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
-        graph = performBreaking(graph, vOpposite, longestEdge);
-
-        System.out.println("longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
-        hangingEdges.push(longestEdge);
-
-        return graph;
-    }
-
-    public ModelGraph performBreaking(ModelGraph graph, Vertex opposite, GraphEdge edge){
-        Vertex newVertex = graph.insertVertexAutoNamedOrGet(edge.getMiddlePointCoordinates());
-        graph.insertEdgeAutoNamedOrGet(opposite, newVertex, false);
-
-        graph.deleteEdge(edge.getId());
-        graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue0(), newVertex, true);
-        graph.insertEdgeAutoNamedOrGet(edge.getEdgeNodes().getValue1(), newVertex, true);
-
-        Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<>(opposite, (Vertex) edge.getEdgeNodes().getValue0(), (Vertex) edge.getEdgeNodes().getValue1());
-        graph = removeFace(graph, triangle);
-        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
-        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
-
-        return graph;
-    }
-
-
-
-    public Collection<FaceNode> getFacesWithEdge(ModelGraph graph, GraphEdge edge){
-        Vertex v0 = (Vertex)edge.getEdgeNodes().getValue0(), v1 = (Vertex)edge.getEdgeNodes().getValue1();
-        Collection<FaceNode> facesWithBrokenEdge = new LinkedList<>();
-        for(FaceNode face: graph.getFaces()){
-            if(face.containsVertices(v0, v1)){
-                facesWithBrokenEdge.add(face);
-            }
-        }
-        return facesWithBrokenEdge;
-    }
-
-    private ModelGraph addNewFaces(ModelGraph graph) {
-        Collection<GraphEdge> ebv = graph.getEdgesBetweenVertices();
-        for(GraphEdge edge : ebv) {
-            Pair<Vertex, Vertex> edgeVertices = edge.getVertices();
-            Collection<Vertex> cv = graph.getCommonVertices(edgeVertices.getValue0(), edgeVertices.getValue1());
-            for(Vertex v : cv) {
-                if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
-                    graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
-                }
-            }
-        }
-        return graph;
-    }
-
-    private ModelGraph markFacesToBreak(ModelGraph graph) {
-        FaceNode faceWithLongestEdge = null;
-        double longestEdgeLen = 0.0;
-        for(FaceNode faceNode : graph.getFaces()) {
-            if(checkEdgesOnLayersBorder(graph, faceNode)) {
-                Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(faceNode);
-                double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
-                if(len > longestEdgeLen){
-                    faceWithLongestEdge = faceNode;
-                    longestEdgeLen = len;
-                }
-            }
-        }
-        if(faceWithLongestEdge != null) faceWithLongestEdge.setR(true);
-
-        return graph;
     }
 
     private Set<FaceNode> findFacesToBreak(ModelGraph graph) {
@@ -335,24 +183,6 @@ public class TransformatorForLayers implements ITransformator{
         return false;
     }
 
-    private ModelGraph removeFace(ModelGraph modelGraph, Triplet<Vertex, Vertex, Vertex> triangle) {
-        FaceNode face = modelGraph.getFace(triangle);
-        modelGraph.removeFace(face.getId());
-        return modelGraph;
-    }
-
-    private Vertex getVertexForNewEdge(FaceNode face, Pair<Vertex, Vertex> vertexes){
-        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
-        if(!triangle.getValue0().getId().equals(vertexes.getValue0().getId()) &&
-                !triangle.getValue0().getId().equals(vertexes.getValue1().getId())) {
-            return triangle.getValue0();
-        }else if(!triangle.getValue1().getId().equals(vertexes.getValue0().getId()) &&
-                !triangle.getValue1().getId().equals(vertexes.getValue1().getId())) {
-            return triangle.getValue1();
-        }
-        return triangle.getValue2();
-    }
-
     public Pair<Vertex, Vertex> getLongestEdgeVerticesFromFace(FaceNode face){
         Vertex v0 = face.getTriangle().getValue0(), v1 = face.getTriangle().getValue1(), v2 = face.getTriangle().getValue2();
         double longestEdgeLen = Coordinates.distance(v0.getCoordinates(), v1.getCoordinates());
@@ -393,13 +223,6 @@ public class TransformatorForLayers implements ITransformator{
         tetGenManager.createGenerationTasks(graph.getFacesNum());
         return graph;
     }
-
-    /*public ModelGraph getGraphForThread(String threadName){
-        for(BreakConflictContainer cont: threadsConflicts){
-            if(cont.getThreadName().equals(threadName)) return cont.graph;
-        }
-        return null;
-    }*/
 
     public boolean isThreadIndependent(List<BreakConflictContainer> breakInfoWithoutConflict, String threadName){
         for(BreakConflictContainer cont: breakInfoWithoutConflict){
@@ -472,23 +295,13 @@ public class TransformatorForLayers implements ITransformator{
             }
         }
 
-        ///*ThreadsDependencyGraph threadsDependencyGraph,*/
         private void createBreakingGenerationTasks(ModelGraph graph, Map<String, Deque<BreakSimulationNode>> breakSimulationPaths,
-                                                   TransformatorForLayers transformator,
-                                                   List<BreakConflictContainer> breakInfoWithoutConflict,
-                                                   ConcurrentMap<String, Boolean> threadsExecutionFinished){
+                                                   List<BreakConflictContainer> breakInfoWithoutConflict){
             Collection< Callable<Integer> > taskRes = new LinkedList<>();
-            /*for(BreakConflictContainer cont: breakInfoWithoutConflict){
-                taskRes.add(new BreakingGenerator(graph, breakSimulationPaths, threadsExecutionFinished, threadsDependencyGraph));
-            }*/
-            //Map<String, String> topologicalOrderSuperiors = threadsDependencyGraph.getDirectSuperiorThreadInTSMap();
-            //System.out.println("SUP = "+ topologicalOrderSuperiors);
-            //lockContainer = new ThreadLockContainer(threadsExecutionFinished, graph);
             System.out.println("INDEPENDENT SIZE = "+ breakInfoWithoutConflict.size());
             for(BreakConflictContainer threadInfo: breakInfoWithoutConflict){
                 FaceNode startFace = graph.getFace(breakSimulationPaths.get(threadInfo.getThreadName()).getFirst().getFace().getId()).get();
                 taskRes.add(new BreakingGenerator(graph, startFace, breakSimulationPaths.get(threadInfo.getThreadName())));
-                //ModelGraph gr = getGraphForThread(threadInfo.getKey());
                 System.out.println("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
             }
             if(!taskRes.isEmpty()) {
@@ -503,16 +316,6 @@ public class TransformatorForLayers implements ITransformator{
                 }
             }
             int c = 0;
-            /*for(Map.Entry<String, String> threadInfo: topologicalOrderSuperiors.entrySet()){
-                if(threadsDependencyGraph.isThreadNodeIndependent(threadInfo.getKey())) continue;
-
-                Optional<FaceNode> startFace = graph.getFace(breakSimulationPaths.get(threadInfo.getKey()).get(0).getFace().getId());
-                if(!startFace.isPresent()) continue;
-                BreakGenerationProvider breakGen = new BreakGenerationProvider(graph, startFace.get());
-                breakGen.transform();
-                c++;
-                System.out.println("RPYCH::Breaking step "+ counter + " c = " + c);
-            }*/
             for(String threadName: breakSimulationPaths.keySet()){
                 if(isThreadIndependent(breakInfoWithoutConflict, threadName)) continue;
 
@@ -521,7 +324,7 @@ public class TransformatorForLayers implements ITransformator{
                 BreakGenerationProvider breakGen = new BreakGenerationProvider(graph, startFace.get());
                 breakGen.transform();
                 c++;
-                System.out.println("RPYCH::Breaking step "+ counter + " c = " + c);
+                System.out.println("::Breaking step "+ counter + " c = " + c);
             }
             System.out.println("Breaking step ended "+ counter);
         }

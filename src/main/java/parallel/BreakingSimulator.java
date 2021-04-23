@@ -1,6 +1,5 @@
 package parallel;
 
-import app.Config;
 import controller.TransformatorForLayers;
 import model.*;
 import model.helpers.BreakConflictContainer;
@@ -20,7 +19,6 @@ public class BreakingSimulator implements Callable<Integer> {
 
     private String threadName;
     private TransformatorForLayers observer;
-    //private ModelGraph originalGraph;
     private ModelGraph graph;
     private Stack<GraphEdge> hangingEdges;
     private Optional<FaceNode> startFace;
@@ -32,11 +30,9 @@ public class BreakingSimulator implements Callable<Integer> {
 
     public BreakingSimulator(TransformatorForLayers transformator, String startFaceId, CyclicBarrier cyclicBarrier){
         this.observer = transformator;
-        //this.originalGraph = transformator.graph;
         this.graph = new ModelGraph(transformator.graph); //copy ctor
         this.hangingEdges = new Stack<GraphEdge>();
         this.startFace = this.graph.getFace(startFaceId);
-        //System.out.println("FACE IN THREAD = "+ this.startFace.get().getId());
         this.simPaths = new ConcurrentLinkedDeque<>();
         this.conflictContainer = new BreakConflictContainer();
         this.threadName = "";
@@ -94,7 +90,6 @@ public class BreakingSimulator implements Callable<Integer> {
     }
 
     public synchronized void updateObserversSimulationPaths(){
-        //System.out.println("PATHS in THREAD = "+ simPaths.toString());
         observer.updateSimulationPathInfo(threadName, this.simPaths);
     }
 
@@ -108,7 +103,7 @@ public class BreakingSimulator implements Callable<Integer> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        //System.out.println("Sleep time elapsed = " + Thread.currentThread().getName());
+
         Deque<BreakSimulationNode> simulationPath =  this.observer.breakSimulationPaths.get(this.threadName);
         for(Map.Entry<String, Deque<BreakSimulationNode>> breakInfo: this.observer.breakSimulationPaths.entrySet()){
             if(threadName.equals(breakInfo.getKey())) continue;
@@ -127,13 +122,6 @@ public class BreakingSimulator implements Callable<Integer> {
             }
         }
     }
-
-    /*public Optional<FaceNode> findFaceToBreak(ModelGraph graph){
-        for(FaceNode face: graph.getFaces()){
-            if(face.isR()) return Optional.of(face);
-        }
-        return Optional.empty();
-    }*/
 
     public Optional<FaceNode> findFaceWithHangingNode(ModelGraph graph){
         Vertex v0 = (Vertex)hangingEdges.peek().getEdgeNodes().getValue0(), v1 = (Vertex)hangingEdges.peek().getEdgeNodes().getValue1();
@@ -213,7 +201,6 @@ public class BreakingSimulator implements Callable<Integer> {
     }
 
     public Collection<FaceNode> getFacesWithEdge(ModelGraph graph, Vertex v0, Vertex v1){
-        //Vertex v0 = (Vertex)edge.getEdgeNodes().getValue0(), v1 = (Vertex)edge.getEdgeNodes().getValue1();
         Collection<FaceNode> facesWithBrokenEdge = new LinkedList<>();
         for(FaceNode face: graph.getFaces()){
             if(face.containsVertices(v0, v1)){
@@ -225,7 +212,6 @@ public class BreakingSimulator implements Callable<Integer> {
 
     private ModelGraph addNewFaces(ModelGraph graph) {
         Collection<GraphEdge> ebv = graph.getEdgesBetweenVertices();
-        int flag = 1;
         for(GraphEdge edge : ebv) {
             Pair<Vertex, Vertex> edgeVertices = edge.getVertices();
             Collection<Vertex> cv = graph.getCommonVertices(edgeVertices.getValue0(), edgeVertices.getValue1());
@@ -233,52 +219,12 @@ public class BreakingSimulator implements Callable<Integer> {
                 if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
                     FaceNode f = graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
                     simPaths.getLast().addFaceToInsertInThisStep(f);
-                    System.out.println(threadName + " SIMULATOR::ADD_NEW_FACE = "+ f.getId() + ", flag = "+ flag);
-                    flag++;
+                    System.out.println(threadName + " SIMULATOR::ADD_NEW_FACE = "+ f.getId());
                 }
             }
         }
         return graph;
     }
-
-    /*private ModelGraph markFacesToBreak(ModelGraph graph) {
-        FaceNode faceWithLongestEdge = null;
-        double longestEdgeLen = 0.0;
-        for(FaceNode faceNode : graph.getFaces()) {
-            if(checkEdgesOnLayersBorder(graph, faceNode)) {
-                Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(faceNode);
-                double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
-                if(len > longestEdgeLen){
-                    faceWithLongestEdge = faceNode;
-                    longestEdgeLen = len;
-                }
-            }
-        }
-        if(faceWithLongestEdge != null) faceWithLongestEdge.setR(true);
-
-        return graph;
-    }*/
-
-    /*public boolean checkEdgesOnLayersBorder(ModelGraph graph, FaceNode face){
-        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
-
-        if(LFunction.areDifferentLayers( triangle.getValue0().getCoordinates(),
-                triangle.getValue1().getCoordinates() ))
-        {
-            return true;
-        }
-        if(LFunction.areDifferentLayers( triangle.getValue0().getCoordinates(),
-                triangle.getValue2().getCoordinates()) )
-        {
-            return true;
-        }
-        if(LFunction.areDifferentLayers( triangle.getValue1().getCoordinates(),
-                triangle.getValue2().getCoordinates()) )
-        {
-            return true;
-        }
-        return false;
-    }*/
 
     private ModelGraph removeFace(ModelGraph modelGraph, Triplet<Vertex, Vertex, Vertex> triangle) {
         FaceNode face = modelGraph.getFace(triangle);
