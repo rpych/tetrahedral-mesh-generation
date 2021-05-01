@@ -43,6 +43,7 @@ public class TransformatorForLayers {
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
             while( !hangingEdges.empty() ){
+                GraphEdge stackEdgeRef = hangingEdges.peek();
                 System.out.println("STACK = "+ hangingEdges.peek().getId());
                 Optional<FaceNode> faceHN = findFaceWithHangingNode(graph);
                 if(!faceHN.isPresent()) {
@@ -52,6 +53,10 @@ public class TransformatorForLayers {
                 }
                 graph = processLastHangingNode(graph, faceHN.get());
                 graph = addNewFaces(graph);
+
+                if(existsFaceWithEdge(graph, stackEdgeRef) && hangingEdges.isEmpty()){
+                   hangingEdges.push(stackEdgeRef);
+                }
             }
             graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
