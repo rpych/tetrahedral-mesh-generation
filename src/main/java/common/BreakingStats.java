@@ -30,7 +30,7 @@ public class BreakingStats {
 
         for(FaceNode face: graph.getFaces()){
             if(!graph.areVertexesLinked(face)){
-                System.out.println("Face exists but its vertices are not linked !!!!!");
+                System.out.println("Face exists but its vertices are not linked !!!!!" + face.getId());
             }
         }
     }
@@ -55,6 +55,7 @@ public class BreakingStats {
             if(entry.getValue().equals(0) || entry.getValue() > 2){
                 f = false;
                 System.out.println("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
+                graph.getFacesMap().remove(entry.getKey());
             }
         }
         System.out.println("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +

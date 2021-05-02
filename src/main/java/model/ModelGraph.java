@@ -107,6 +107,10 @@ public class ModelGraph extends Graph {
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
         FaceNode faceNode = new FaceNode(this, id, v1, v2, v3);
         faces.put(id, faceNode);
+        if(id.equals("F_0,3333333_0,7083333_0,7916666")){
+            boolean res = areVertexesLinked(faceNode);
+            System.out.println("PROBLEMATIC FACE ADDED " + res);
+        }
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
         //insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
@@ -259,6 +263,10 @@ public class ModelGraph extends Graph {
 
     public Collection<FaceNode> getFaces() {
         return faces.values();
+    }
+
+    public Map<String, FaceNode> getFacesMap(){
+        return faces;
     }
 
     public Optional<GraphEdge> getEdge(Vertex v1, Vertex v2) {

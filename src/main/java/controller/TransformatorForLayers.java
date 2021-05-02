@@ -1,5 +1,7 @@
 package controller;
 
+import app.Config;
+import common.BreakAccuracyManager;
 import common.BreakingStats;
 import common.LFunction;
 import logger.MeshLogger;
@@ -22,6 +24,8 @@ public class TransformatorForLayers {
     private TetrahedraGenManager tetGenManager;
 
     private BreakingStats stats;
+    private BreakAccuracyManager accuracyManager;
+    private boolean isAccuracyBounded;
     MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
 
 
@@ -30,6 +34,8 @@ public class TransformatorForLayers {
         this.hangingEdges = new Stack<GraphEdge>();
         this.tetGenManager = new TetrahedraGenManager();
         this.stats = stats;
+        this.accuracyManager = new BreakAccuracyManager();
+        this.isAccuracyBounded = Config.IS_ACCURACY_BOUNDED;
     }
 
     public ModelGraph transform() {
@@ -61,11 +67,15 @@ public class TransformatorForLayers {
             graph = createNewInteriorNodes();
             graph = markFacesToBreak(graph);
             face = findFaceToBreak(graph); //face on different layers
+            if(!face.isPresent()){
+                System.out.println("FACE not present "+ counter);
+                return graph;
+            }
 
             //breaking ratio checking
             stats.checkAdaptationProperties(graph);
 
-            if(counter % 20 == 0 || counter <= 300) {
+            if(counter % 20 == 0 || counter <= 600) {
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
@@ -74,7 +84,7 @@ public class TransformatorForLayers {
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) );
             }
-            if (isEnoughBreakingAccuracy(graph)) {
+            if (accuracyManager.isEnoughBreakingAccuracy(graph)) {
                 tetGenManager.shutdownThreadPool();
                 System.out.println("ENOUGH accuracy met");
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
@@ -87,7 +97,7 @@ public class TransformatorForLayers {
                 matlabVisualizer.saveCode();
                 break;
             }
-            //stats.checkFacesConnected(graph);
+            stats.checkFacesConnected(graph);
 
         }
         return graph;
@@ -192,7 +202,8 @@ public class TransformatorForLayers {
             Collection<Vertex> cv = graph.getCommonVertices(edgeVertices.getValue0(), edgeVertices.getValue1());
             for(Vertex v : cv) {
                 if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
-                    graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
+                    FaceNode f = graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
+                    System.out.println("FACE_ADDED = "+ f.getId());
                 }
             }
         }
@@ -204,6 +215,10 @@ public class TransformatorForLayers {
         double longestEdgeLen = 0.0;
         for(FaceNode faceNode : graph.getFaces()) {
             if(checkEdgesOnLayersBorder(graph, faceNode)) {
+                if(isAccuracyBounded && ((accuracyManager.isEnoughNumOfIntNodesBelowThreshIntermed() && checkFaceContainsLayer(faceNode, LFunction.LAYER.INTERMEDIATE)) ||
+                        (accuracyManager.isEnoughNumOfIntNodesBelowThreshLow() && checkFaceContainsLayer(faceNode, LFunction.LAYER.LOWEST))))
+                    continue;
+
                 Pair<Vertex, Vertex> longEdgeVert = getLongestEdgeVerticesFromFace(faceNode);
                 double len = Coordinates.distance(longEdgeVert.getValue0().getCoordinates(), longEdgeVert.getValue1().getCoordinates());
                 if(len > longestEdgeLen){
@@ -215,6 +230,27 @@ public class TransformatorForLayers {
         if(faceWithLongestEdge != null) faceWithLongestEdge.setR(true);
 
         return graph;
+    }
+
+    public boolean checkFaceContainsLayer(FaceNode face, LFunction.LAYER layer){
+        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
+
+        if(LFunction.arePointsCrossingLayer(layer, triangle.getValue0().getCoordinates(),
+                triangle.getValue1().getCoordinates() ))
+        {
+            return true;
+        }
+        if(LFunction.arePointsCrossingLayer(layer, triangle.getValue0().getCoordinates(),
+                triangle.getValue2().getCoordinates()) )
+        {
+            return true;
+        }
+        if(LFunction.arePointsCrossingLayer(layer, triangle.getValue1().getCoordinates(),
+                triangle.getValue2().getCoordinates()) )
+        {
+            return true;
+        }
+        return false;
     }
 
     public boolean checkEdgesOnLayersBorder(ModelGraph graph, FaceNode face){
@@ -292,15 +328,15 @@ public class TransformatorForLayers {
         graph.setOldInteriorNodes(graph);
         graph.clearInteriorNodes();
         //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
-        //return graph.createInteriorNodesForNewlyFoundSubGraphs();
-        tetGenManager.createTasksForThreadPool(graph.getFacesNum());
-        return graph;
+        return graph.createInteriorNodesForNewlyFoundSubGraphs();
+        //tetGenManager.createTasksForThreadPool(graph.getFacesNum());
+        //return graph;
     }
 
     //checks
 
 
-    public boolean isEnoughBreakingAccuracy(ModelGraph graph){
+    /*public boolean isEnoughBreakingAccuracy(ModelGraph graph){
         int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
         for(InteriorNode interiorNode: graph.getInteriorNodes()){
             boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
@@ -314,7 +350,7 @@ public class TransformatorForLayers {
         }
         System.out.println("Intermediate threshold = "+ numOfIntNodesBelowThreshIntermed + ", Low threshold = "+ numOfIntNodesBelowThreshLow);
         return false;
-    }
+    }*/
 
     //inner class
     private class TetrahedraGenManager{

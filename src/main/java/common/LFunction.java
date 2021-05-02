@@ -82,6 +82,12 @@ public class LFunction {
         return (Double.compare(distance, brThreshold) == -1);
     }
 
+    public static boolean arePointsCrossingLayer(LAYER layer, Coordinates a, Coordinates b){
+        Plane plane = planes.get(layer);
+        return (plane.isPointBelowOrOnPlane(a) && plane.isPointAboveOrOnPlane(b)) ||
+                (plane.isPointBelowOrOnPlane(b) && plane.isPointAboveOrOnPlane(a));
+    }
+
     public static double PlaneBlue(Coordinates point){
         double z = BlueLayerHeight; // plane equation
         return z;
