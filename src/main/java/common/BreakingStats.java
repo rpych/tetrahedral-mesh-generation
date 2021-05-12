@@ -46,7 +46,17 @@ public class BreakingStats {
             counter += out;
             if(out == 0) counter += 1;
             facesInInteriorCount.put(face.getId(), out);
+            if(!face.getIsBoundaryFace() && out != 2){
+                System.err.println("Face = "+ face.getId()+ ", should has 2 usages but has "+ out);
+            }
+            if(face.getIsBoundaryFace() && out != 1){
+                System.err.println("Face = "+ face.getId()+ ", should has 1 usage but has "+ out);
+            }
+
             if(out == 0 ){
+                graph.debugFaces.add(face);
+            }
+            if(face.getId().equals("F_1,833333333_0,541666666_1,750000000")){
                 graph.debugFaces.add(face);
             }
         }
@@ -55,7 +65,7 @@ public class BreakingStats {
             if(entry.getValue().equals(0) || entry.getValue() > 2){
                 f = false;
                 System.out.println("APPEARANCE IN INTERIORS = "+entry.getKey() + " :"+ entry.getValue());
-                graph.getFacesMap().remove(entry.getKey());
+                //graph.getFacesMap().remove(entry.getKey());
             }
         }
         System.out.println("Faces counter = "+counter + ", whereas InteriorNodes count = "+graph.getInteriorNodes().size() + " and " +

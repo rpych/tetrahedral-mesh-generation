@@ -1,5 +1,7 @@
 package common;
 
+import app.Config;
+import model.Coordinates;
 import model.GraphEdge;
 import model.GraphNode;
 import model.Vertex;
@@ -14,6 +16,11 @@ public class Utils {
 
     public static boolean isEdgeBetween(GraphNode v1, GraphNode v2) {
         return null != v1.getEdgeBetween(v2);
+    }
+
+    public static boolean areBorderCoordinates(double coordDimV0, double coordDimV1, double coordDimV2, double bound){
+        return ( (Double.compare(coordDimV0, bound) == 0) && (Double.compare(coordDimV1, bound) == 0) &&
+                 (Double.compare(coordDimV2, bound) == 0) );
     }
 
 }

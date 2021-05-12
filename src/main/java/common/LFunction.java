@@ -1,7 +1,5 @@
 package common;
 import model.Coordinates;
-import model.GraphEdge;
-import model.GraphNode;
 
 import java.util.*;
 
@@ -17,8 +15,8 @@ public class LFunction {
     public static Map<LAYER, Plane> planes;
     static {
         planes = new HashMap<LAYER, Plane>();
-        planes.put(LAYER.HIGHEST, (new Plane(0.0, 0.0, 1.0, -1.0)));
-        planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -0.75)));
+        planes.put(LAYER.HIGHEST, (new Plane(0.0, 0.0, 1.0, -2.0)));
+        planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -1.4)));
         //planes.put(LAYER.INTERMEDIATE, (new Plane(100.0, -200.0, 1180.0, -693.0)));
         //planes.put(LAYER.INTERMEDIATE, (new Plane(100.0, -200.0, 1180.0, -811.0)));
         //planes.put(LAYER.INTERMEDIATE, (new Plane(70.0, 85.0, 35.0, -78.0)));

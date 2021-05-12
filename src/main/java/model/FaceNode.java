@@ -1,5 +1,9 @@
 package model;
 
+import app.Config;
+
+import app.Config;
+import static common.Utils.areBorderCoordinates;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
@@ -13,6 +17,8 @@ public class FaceNode extends GraphNode {
 
     private boolean R;
 
+    private boolean isBoundaryFace;
+
     public FaceNode(ModelGraph graph, String id, Coordinates coordinates) {
         super(graph, id, FACE_SYMBOL, coordinates);
     }
@@ -21,8 +27,8 @@ public class FaceNode extends GraphNode {
         super(graph, id, FACE_SYMBOL, getFacePosition(v1, v2, v3));
         triangle = new Triplet<>(v1, v2, v3);
         R = false;
+        setIsBoundaryFace();
     }
-
 
     public Triplet<Vertex, Vertex, Vertex> getTriangle(){
         return triangle;
@@ -54,6 +60,20 @@ public class FaceNode extends GraphNode {
 
     private static double getFaceZCoordinate(Vertex v1, Vertex v2, Vertex v3) {
         return (v1.getZCoordinate() + v2.getZCoordinate() + v3.getZCoordinate()) / 3d;
+    }
+
+    public boolean getIsBoundaryFace(){
+        return isBoundaryFace;
+    }
+
+    private void setIsBoundaryFace(){
+        Vertex v0 = triangle.getValue0(), v1 = triangle.getValue1(), v2 = triangle.getValue2();
+        isBoundaryFace = (areBorderCoordinates(v0.getXCoordinate(), v1.getXCoordinate(), v2.getXCoordinate(), Config.START_COORD)  ||
+                         areBorderCoordinates(v0.getXCoordinate(), v1.getXCoordinate(), v2.getXCoordinate(), Config.X_DIM)) ||
+                         (areBorderCoordinates(v0.getYCoordinate(), v1.getYCoordinate(), v2.getYCoordinate(), Config.START_COORD)  ||
+                         areBorderCoordinates(v0.getYCoordinate(), v1.getYCoordinate(), v2.getYCoordinate(), Config.Y_DIM)) ||
+                         (areBorderCoordinates(v0.getZCoordinate(), v1.getZCoordinate(), v2.getZCoordinate(), Config.START_COORD)  ||
+                         areBorderCoordinates(v0.getZCoordinate(), v1.getZCoordinate(), v2.getZCoordinate(), Config.Z_DIM));
     }
 
     /*if faces are different but have common edge then set of their vertices has size of 4*/

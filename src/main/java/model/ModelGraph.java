@@ -14,15 +14,15 @@ import static common.Utils.isEdgeBetween;
 
 public class ModelGraph extends Graph {
 
-    private Map<String, Vertex> vertices = new ConcurrentSkipListMap<>();
+    private Map<String, Vertex> vertices = new HashMap<>();
 
-    private Map<String, FaceNode> faces = new ConcurrentSkipListMap<>();
+    private Map<String, FaceNode> faces = new HashMap<>();
 
-    private Map<String, GraphEdge> edges = new ConcurrentSkipListMap<>();
+    private Map<String, GraphEdge> edges = new HashMap<>();
 
-    private Map<String, InteriorNode> interiorNodes = new ConcurrentSkipListMap<>();
+    private Map<String, InteriorNode> interiorNodes = new HashMap<>();
 
-    private Map<String, InteriorNode> interiorNodesOld = new ConcurrentSkipListMap<>();
+    private Map<String, InteriorNode> interiorNodesOld = new HashMap<>();
 
     public List<FaceNode> debugFaces = new LinkedList<>();
 
@@ -177,8 +177,10 @@ public class ModelGraph extends Graph {
 
     public void deleteEdge(String edgeId){
         GraphEdge graphEdge = edges.remove(edgeId);
-        graphEdge.getEdgeNodes().getValue0().removeNeighbourEdge(graphEdge);
-        graphEdge.getEdgeNodes().getValue1().removeNeighbourEdge(graphEdge);
+        GraphNode v0 = graphEdge.getEdgeNodes().getValue0();
+        GraphNode v1 = graphEdge.getEdgeNodes().getValue1();
+        v0.removeNeighbourEdge(graphEdge);
+        v1.removeNeighbourEdge(graphEdge);
     }
 
     public Optional<GraphEdge> getEdgeById(String id) {
@@ -460,6 +462,9 @@ public class ModelGraph extends Graph {
     //main method for InteriorNode
     public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
         for(FaceNode face: this.getFaces() ){
+            if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+                System.out.println("Problem face found first "+ face.getId());
+            }
             List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
                 if( candSubGraph != null && !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
@@ -488,7 +493,7 @@ public class ModelGraph extends Graph {
     }
 
     private boolean checkVerticesWithinSubgraphAlreadyProcessed(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph){
-        for(Map.Entry<String, InteriorNode> intNode: this.interiorNodes.entrySet()){
+        for(Map.Entry<String, InteriorNode> intNode: interiorNodes.entrySet()){
             if(intNode.getValue().checkSameVerticesInInteriorNode(candSubGraph)){
                 return true;
             }
@@ -500,6 +505,9 @@ public class ModelGraph extends Graph {
        Map<String, Integer> candSubGraphTopVertices = new HashMap<>();
        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
        Vertex v0 = triangle.getValue0(), v1 = triangle.getValue1(), v2 = triangle.getValue2();
+       if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+           System.out.println("Problem face found "+ face.getId());
+       }
        for(FaceNode f: this.getFaces() ){
            if( !f.equals(face) && f.isFaceCongruent(face) ){
                processFaceToFindSubgraphTopVertex(f, triangle, candSubGraphTopVertices);
@@ -507,6 +515,9 @@ public class ModelGraph extends Graph {
        }
         List<Vertex> topVertices = getSubgraphTopVertex(triangle, candSubGraphTopVertices, face);
         List<Quartet<Vertex, Vertex, Vertex, Vertex>> subGraphVertices = new LinkedList<>();
+        if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+            System.out.println("Problem face found "+ face.getId() + ", topVertices = "+ topVertices.toString() + ", candSubGraphTopVertices = "+ candSubGraphTopVertices.toString());
+        }
 
        if(topVertices.size() > 0){
            for(Vertex topVertex: topVertices){

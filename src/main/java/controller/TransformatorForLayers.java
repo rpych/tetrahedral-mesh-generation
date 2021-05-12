@@ -26,6 +26,7 @@ public class TransformatorForLayers {
     private BreakingStats stats;
     private BreakAccuracyManager accuracyManager;
     private boolean isAccuracyBounded;
+    private boolean shouldFinish = false;
     MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
 
 
@@ -45,7 +46,7 @@ public class TransformatorForLayers {
     public ModelGraph transform(ModelGraph graph) {
         Optional<FaceNode> face = findFaceToBreak(graph);
         counter  = 0;
-        while(face.isPresent()){
+        while(face.isPresent() && !shouldFinish){
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
             while( !hangingEdges.empty() ){
@@ -61,6 +62,7 @@ public class TransformatorForLayers {
                 graph = addNewFaces(graph);
 
                 if(existsFaceWithEdge(graph, stackEdgeRef) && hangingEdges.isEmpty()){
+                   System.out.println("EMPTY STACK FILLED "+ stackEdgeRef.getId());
                    hangingEdges.push(stackEdgeRef);
                 }
             }
@@ -100,6 +102,16 @@ public class TransformatorForLayers {
             stats.checkFacesConnected(graph);
 
         }
+        if(shouldFinish){
+            if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
+                System.err.println("Some FACES do not belong to any interiorNode " + counter);
+            } else
+                System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
+            System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
+                    ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()));
+            MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLay07_05_Par" + counter);
+            matlabVisualizer.saveCode();
+        }
         return graph;
     }
 
@@ -132,6 +144,9 @@ public class TransformatorForLayers {
         GraphEdge longestEdge = graph.insertEdgeAutoNamedOrGet(longEdgeVert.getValue0(), longEdgeVert.getValue1(), false);
         Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
         graph = performBreaking(graph, vOpposite, longestEdge);
+        if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+            System.out.println("Problem face added longestEdge = "+longestEdge.getId() + ", vOpposite = "+ vOpposite);
+        }
         System.out.println("HN::longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
 
         if(isLastHNRefined(longestEdge) && !existsFaceWithEdge(graph, longestEdge)){
@@ -176,8 +191,16 @@ public class TransformatorForLayers {
 
         Triplet<Vertex, Vertex, Vertex> triangle = new Triplet<>(opposite, (Vertex) edge.getEdgeNodes().getValue0(), (Vertex) edge.getEdgeNodes().getValue1());
         graph = removeFace(graph, triangle);
-        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
-        graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
+        FaceNode f1 = graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
+        FaceNode f2 = graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
+        if(f1.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+            System.out.println("Problem face performBreaking longestEdge = "+edge.getId() + ", vOpposite = "+ opposite.getId());
+            shouldFinish = true;
+        }
+        if(f2.getId().equals("F_2,000000000_0,541666666_1,583333333")){
+            System.out.println("Problem face performBreaking longestEdge = "+edge.getId() + ", vOpposite = "+ opposite.getId());
+            shouldFinish = true;
+        }
 
         return graph;
     }
@@ -203,7 +226,7 @@ public class TransformatorForLayers {
             for(Vertex v : cv) {
                 if(!graph.hasFaceNode(edgeVertices.getValue0(), edgeVertices.getValue1(), v)) {
                     FaceNode f = graph.insertFaceAutoNamed(edgeVertices.getValue0(), edgeVertices.getValue1(), v);
-                    System.out.println("FACE_ADDED = "+ f.getId());
+                    System.out.println("FACE_ADDED = "+ f.getId() + ", V0 = "+ f.getTriangle().getValue0().getId() + ", V1 = "+ f.getTriangle().getValue1().getId()+ ", V2 = "+ f.getTriangle().getValue2().getId());
                 }
             }
         }

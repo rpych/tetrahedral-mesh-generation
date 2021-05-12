@@ -14,12 +14,12 @@ import java.util.List;
 public class Main {
 	
     public static void main(String[] args) {
-        
-        ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), 2.0, 1.0, 1.0);
+
+        ModelGraph cuboid = generateCuboid(new Coordinates(0.0, 0.0, 0.0), Config.X_DIM, Config.Y_DIM, Config.Z_DIM);
         BreakingStats stats = new BreakingStats(false, true);
         TransformatorForLayers transformator = new TransformatorForLayers(cuboid, stats);
         cuboid = transformator.transform();
-        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "visLay02_05_Check");
+        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "vi08_05_1");
         matlabVisualizer.saveCode();
         
         System.out.println("Program ended successfully");
