@@ -1,4 +1,5 @@
 package common;
+import app.Config;
 import model.Coordinates;
 
 import java.util.*;
@@ -11,18 +12,12 @@ public class LFunction {
     private static double OrangeLayerHeight = 0.0f;
     //members for default solution with any layer form
     private static double layersLowerBoundary = 0.0f;
-    private static double brThreshold = 0.01; //epsilon
+    private static double brThreshold = Config.ACCURACY_EPS; //epsilon
     public static Map<LAYER, Plane> planes;
     static {
         planes = new HashMap<LAYER, Plane>();
-        planes.put(LAYER.HIGHEST, (new Plane(0.0, 0.0, 1.0, -2.0)));
-        planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -1.4)));
-        //planes.put(LAYER.INTERMEDIATE, (new Plane(100.0, -200.0, 1180.0, -693.0)));
-        //planes.put(LAYER.INTERMEDIATE, (new Plane(100.0, -200.0, 1180.0, -811.0)));
-        //planes.put(LAYER.INTERMEDIATE, (new Plane(70.0, 85.0, 35.0, -78.0)));
-        //planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -0.7)));
-        //planes.put(LAYER.LOWEST, (new Plane(0.0, 0.0, 1.0, -0.3)));
-        //planes.put(LAYER.LOWEST, (new Plane(50.0, -100.0, 590.0, -199.0)));
+        planes.put(LAYER.HIGHEST, (new Plane(0.0, 0.0, 1.0, -2.0))); //-2.0
+        planes.put(LAYER.INTERMEDIATE, (new Plane(0.0, 0.0, 1.0, -1.4))); //6.0, 0.0, 20.0, -36.0
         planes.put(LAYER.LOWEST, (new Plane(1.0, 0.0, 10.0, -4.0)));
     }
 
@@ -40,22 +35,7 @@ public class LFunction {
 
         return LAYER.LOWEST;
     }
-    //function to use with only parallel layers
-    /*public static boolean areDifferentLayers(Coordinates a, Coordinates b){
-        if( (a.getZ() <= LFunction.PlaneBlue(a)) && (a.getZ() >= LFunction.PlaneYellow(a))
-                && (b.getZ() <= LFunction.PlaneBlue(b)) && (b.getZ() >= LFunction.PlaneYellow(b)) ){
-            return false;
-        }
-        else if( (a.getZ() <= LFunction.PlaneYellow(a)) && (a.getZ() >= LFunction.PlaneOrange(a))
-                && (b.getZ() <= LFunction.PlaneYellow(b)) && (b.getZ() >= LFunction.PlaneOrange(b)) ){
-            return false;
-        } //when using 2 layers below condition is never checked
-        else if((a.getZ() <= LFunction.PlaneOrange(a)) && (a.getZ() >= layersLowerBoundary)
-                && (b.getZ() <= LFunction.PlaneOrange(b)) && (b.getZ() >= layersLowerBoundary)){
-            return false;
-        }
-        return true;
-    }*/
+
     //main function for serving layers
     public static boolean areDifferentLayers(Coordinates a, Coordinates b){
         Plane highest = planes.get(LAYER.HIGHEST), intermediate = planes.get(LAYER.INTERMEDIATE), lowest = planes.get(LAYER.LOWEST);

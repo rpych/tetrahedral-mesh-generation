@@ -26,6 +26,7 @@ public class BreakAccuracyManager {
             if(resLowest) numOfIntNodesBelowThreshLow++;
             if(numOfIntNodesBelowThreshIntermed >= numOfReqIntNodesBelowThresh &&
                     numOfIntNodesBelowThreshLow >= numOfReqIntNodesBelowThresh){
+                System.out.println("Intermediate threshold = "+ numOfIntNodesBelowThreshIntermed + ", Low threshold = "+ numOfIntNodesBelowThreshLow);
                 return true;
             }
         }

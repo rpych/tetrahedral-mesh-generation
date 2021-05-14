@@ -4,6 +4,7 @@ import app.Config;
 import common.BreakAccuracyManager;
 import common.BreakingStats;
 import common.LFunction;
+import common.Utils;
 import logger.MeshLogger;
 import model.*;
 import org.javatuples.Pair;
@@ -13,7 +14,6 @@ import visualization.MatlabVisualizer;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 import static common.Utils.isEdgeBetween;
 
@@ -26,7 +26,6 @@ public class TransformatorForLayers {
     private BreakingStats stats;
     private BreakAccuracyManager accuracyManager;
     private boolean isAccuracyBounded;
-    private boolean shouldFinish = false;
     MeshLogger meshLogger = new MeshLogger(TransformatorForLayers.class.getName(), MeshLogger.LogHandler.FILE_HANDLER);
 
 
@@ -46,7 +45,7 @@ public class TransformatorForLayers {
     public ModelGraph transform(ModelGraph graph) {
         Optional<FaceNode> face = findFaceToBreak(graph);
         counter  = 0;
-        while(face.isPresent() && !shouldFinish){
+        while(face.isPresent()){
             graph = breakFace(graph, face.get()); //here insert edge to break E on stack and E as currentEdgeVertices
             counter++;
             while( !hangingEdges.empty() ){
@@ -77,7 +76,7 @@ public class TransformatorForLayers {
             //breaking ratio checking
             stats.checkAdaptationProperties(graph);
 
-            if(counter % 20 == 0 || counter <= 600) {
+            if(counter % 20 == 0 || Config.CHECK_EVERY_ALG_STEP) {
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
                 } else
@@ -87,7 +86,7 @@ public class TransformatorForLayers {
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+(graph.getEdges().size()) );
             }
             if (accuracyManager.isEnoughBreakingAccuracy(graph)) {
-                tetGenManager.shutdownThreadPool();
+                //tetGenManager.shutdownThreadPool();
                 System.out.println("ENOUGH accuracy met");
                 if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
                     System.err.println("Some FACES do not belong to any interiorNode " + counter);
@@ -95,22 +94,9 @@ public class TransformatorForLayers {
                     System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
                 System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
                         ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()));
-                MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLayCuboid10_03_20_Par_" + counter);
-                matlabVisualizer.saveCode();
                 break;
             }
             stats.checkFacesConnected(graph);
-
-        }
-        if(shouldFinish){
-            if (!stats.checkAllFacesBelongToInteriorNode(graph)) {
-                System.err.println("Some FACES do not belong to any interiorNode " + counter);
-            } else
-                System.out.println("Faces correctly matched with Interiors " + counter + " ......................................");
-            System.out.println("FACES = "+ graph.getFaces().size() + ", INTERIORS = "+graph.getInteriorNodes().size() +
-                    ", VERTICES = "+ graph.getVertices().size() + ", EDGES = "+ (graph.getEdges().size()));
-            MatlabVisualizer matlabVisualizer = new MatlabVisualizer(graph, "visLay07_05_Par" + counter);
-            matlabVisualizer.saveCode();
         }
         return graph;
     }
@@ -144,9 +130,6 @@ public class TransformatorForLayers {
         GraphEdge longestEdge = graph.insertEdgeAutoNamedOrGet(longEdgeVert.getValue0(), longEdgeVert.getValue1(), false);
         Vertex vOpposite = getVertexForNewEdge(face, longEdgeVert);
         graph = performBreaking(graph, vOpposite, longestEdge);
-        if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-            System.out.println("Problem face added longestEdge = "+longestEdge.getId() + ", vOpposite = "+ vOpposite);
-        }
         System.out.println("HN::longestEdge = "+longestEdge.getId() + ", OPPOSITE = "+ vOpposite.getId());
 
         if(isLastHNRefined(longestEdge) && !existsFaceWithEdge(graph, longestEdge)){
@@ -193,14 +176,6 @@ public class TransformatorForLayers {
         graph = removeFace(graph, triangle);
         FaceNode f1 = graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue0());
         FaceNode f2 = graph.insertFaceAutoNamed(opposite, newVertex, (Vertex) edge.getEdgeNodes().getValue1());
-        if(f1.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-            System.out.println("Problem face performBreaking longestEdge = "+edge.getId() + ", vOpposite = "+ opposite.getId());
-            shouldFinish = true;
-        }
-        if(f2.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-            System.out.println("Problem face performBreaking longestEdge = "+edge.getId() + ", vOpposite = "+ opposite.getId());
-            shouldFinish = true;
-        }
 
         return graph;
     }
@@ -350,30 +325,13 @@ public class TransformatorForLayers {
     public ModelGraph createNewInteriorNodes(){
         graph.setOldInteriorNodes(graph);
         graph.clearInteriorNodes();
-        //System.out.println("OLD size = "+ graph.interiorNodesOld.size() + ", interiorNodes size = "+graph.getInteriorNodes().size());
-        return graph.createInteriorNodesForNewlyFoundSubGraphs();
-        //tetGenManager.createTasksForThreadPool(graph.getFacesNum());
-        //return graph;
+        graph.createInteriorNodesForNewlyFoundSubGraphs(Utils.INTERIOR_GEN_TYPE.BASIC_TYPE);
+        graph.performExtraRefinements();
+        addNewFaces(graph);
+        graph.createInteriorNodesForNewlyFoundSubGraphs(Utils.INTERIOR_GEN_TYPE.EXTRA_REFINEMENT);
+        graph.clearExtraRefinementFaces();
+        return graph;
     }
-
-    //checks
-
-
-    /*public boolean isEnoughBreakingAccuracy(ModelGraph graph){
-        int numOfReqIntNodesBelowThresh = 20, numOfIntNodesBelowThreshIntermed = 0, numOfIntNodesBelowThreshLow = 0;
-        for(InteriorNode interiorNode: graph.getInteriorNodes()){
-            boolean resIntermed = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.INTERMEDIATE, interiorNode.getCoordinates());
-            boolean resLowest = LFunction.isDistanceToLayerBelowThreshold(LFunction.LAYER.LOWEST, interiorNode.getCoordinates());
-            if(resIntermed) numOfIntNodesBelowThreshIntermed++;
-            if(resLowest) numOfIntNodesBelowThreshLow++;
-            if(numOfIntNodesBelowThreshIntermed >= numOfReqIntNodesBelowThresh &&
-                    numOfIntNodesBelowThreshLow >= numOfReqIntNodesBelowThresh){
-                return true;
-            }
-        }
-        System.out.println("Intermediate threshold = "+ numOfIntNodesBelowThreshIntermed + ", Low threshold = "+ numOfIntNodesBelowThreshLow);
-        return false;
-    }*/
 
     //inner class
     private class TetrahedraGenManager{

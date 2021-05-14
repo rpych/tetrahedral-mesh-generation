@@ -23,4 +23,8 @@ public class Utils {
                  (Double.compare(coordDimV2, bound) == 0) );
     }
 
+    public enum INTERIOR_GEN_TYPE{
+        BASIC_TYPE, EXTRA_REFINEMENT;
+    }
+
 }

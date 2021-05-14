@@ -1,16 +1,17 @@
 package model;
 
 import common.IdFormatter;
+import common.Utils;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.javatuples.Triplet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import static common.Utils.isVertexSameAs;
 import static common.Utils.isEdgeBetween;
+import static common.Utils.INTERIOR_GEN_TYPE;
 
 public class ModelGraph extends Graph {
 
@@ -24,9 +25,9 @@ public class ModelGraph extends Graph {
 
     private Map<String, InteriorNode> interiorNodesOld = new HashMap<>();
 
-    public List<FaceNode> debugFaces = new LinkedList<>();
+    public List<FaceNode> facesForExtraRefinement = new LinkedList<>();
 
-    //public Integer falseEdgesCounter = 0;
+    public List<FaceNode> debugFaces = new LinkedList<>();
 
     public ModelGraph(String id) {
         super(id);
@@ -107,10 +108,6 @@ public class ModelGraph extends Graph {
     public FaceNode insertFace(String id, Vertex v1, Vertex v2, Vertex v3) {
         FaceNode faceNode = new FaceNode(this, id, v1, v2, v3);
         faces.put(id, faceNode);
-        if(id.equals("F_0,3333333_0,7083333_0,7916666")){
-            boolean res = areVertexesLinked(faceNode);
-            System.out.println("PROBLEMATIC FACE ADDED " + res);
-        }
         //insertEdge(id.concat(v1.getId()), faceNode, v1, false, "fill-color: blue;");
         //insertEdge(id.concat(v2.getId()), faceNode, v2, false, "fill-color: blue;");
         //insertEdge(id.concat(v3.getId()), faceNode, v3, false, "fill-color: blue;");
@@ -187,19 +184,19 @@ public class ModelGraph extends Graph {
         return Optional.ofNullable(edges.get(id));
     }
 
-    public List<Vertex> getVerticesBetween(Vertex beginning, Vertex end) {
+    public boolean getVerticesBetween(Vertex beginning, Vertex end) {
         if(beginning.getEdgeBetween(end) != null){
-            return new LinkedList<>();
+            return false;
         }
-        return this.vertices
+        return (this.vertices
                 .values()
                 .stream()
                 .filter(v -> isVertexBetween(v, beginning, end))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()).size() > 0);
     }
 
-    public Optional<Vertex> getVertexBetween(Vertex beginning, Vertex end) {
-        return this.getVerticesBetween(beginning, end).stream().findFirst();
+    public boolean getVertexBetween(Vertex beginning, Vertex end) {
+        return this.getVerticesBetween(beginning, end);
     }
 
     public GraphEdge getTriangleLongestEdge(FaceNode faceNode){
@@ -383,21 +380,23 @@ public class ModelGraph extends Graph {
     	return false;
     }
 
-    public Optional<FaceNode> getNearestCongruentFace(FaceNode face, Collection<FaceNode> faces){
+    public Optional<FaceNode> getNearestCongruentFace(FaceNode face, Collection<FaceNode> facesToCheck){
         double minDistance = 100000;
         FaceNode nearestFace = null;
-        for(FaceNode faceOnBorder: faces){
-            if(!face.equals(faceOnBorder)){
-                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(faceOnBorder);
+        for(FaceNode faceToRefine: facesToCheck){
+            if(!(face.getId().equals(faceToRefine.getId()))){
+                Optional<Pair<Vertex, Vertex>> uncommonVertices = face.getUncommonVerticesIfCongruent(faceToRefine);
                 if(! uncommonVertices.isPresent()) continue;
 
                 Vertex uv0 = uncommonVertices.get().getValue0();
                 Vertex uv1 = uncommonVertices.get().getValue1();
 
+                if(getVerticesBetween(uv0, uv1)) continue; //face congruent but not nearest
+
                 double distance = Coordinates.distance(uv0.getCoordinates(), uv1.getCoordinates());
                 if(distance < minDistance){
                     minDistance = distance;
-                    nearestFace = faceOnBorder;
+                    nearestFace = faceToRefine;
                 }
             }
         }
@@ -433,7 +432,7 @@ public class ModelGraph extends Graph {
         String nodeName = InteriorNode.INTERIOR_SYMBOL + IdFormatter.df.format(coordinates.getX()) + "_"
                 + IdFormatter.df.format(coordinates.getY()) + "_"
                 + IdFormatter.df.format(coordinates.getZ());
-        //System.out.println(nodeName);
+
         return insertInteriorNode(nodeName, (Vertex)n1, (Vertex)n2, (Vertex)n3, (Vertex)n4, null);
     }
 
@@ -460,15 +459,16 @@ public class ModelGraph extends Graph {
     }
 
     //main method for InteriorNode
-    public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(){
-        for(FaceNode face: this.getFaces() ){
-            if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-                System.out.println("Problem face found first "+ face.getId());
-            }
+    public ModelGraph createInteriorNodesForNewlyFoundSubGraphs(INTERIOR_GEN_TYPE genType){
+        Collection<FaceNode> facesCollection = (genType == INTERIOR_GEN_TYPE.BASIC_TYPE) ? getFaces() : facesForExtraRefinement;
+        for(FaceNode face: facesCollection){
             List<Quartet<Vertex, Vertex, Vertex, Vertex>> candSubGraphs = this.findVerticesWhichFormsCandSubGraph(face);
             for(Quartet<Vertex, Vertex, Vertex, Vertex> candSubGraph: candSubGraphs){
                 if( candSubGraph != null && !checkVerticesWithinSubgraphAlreadyProcessed(candSubGraph) ){
                     InteriorNode interiorNode = insertInteriorNodeAutoNamed(candSubGraph.getValue0(), candSubGraph.getValue1(), candSubGraph.getValue2(), candSubGraph.getValue3());
+                    if(genType == INTERIOR_GEN_TYPE.EXTRA_REFINEMENT){
+                        System.out.println("EXTRA INTERIOR CREATED FROM FACE = "+ face.getId());
+                    }
                     if(isInteriorNodeAddedInCurrentAlgStep(candSubGraph)){
                         interiorNode.setIsNewlyAdded(true);
                     }
@@ -505,9 +505,6 @@ public class ModelGraph extends Graph {
        Map<String, Integer> candSubGraphTopVertices = new HashMap<>();
        Triplet<Vertex, Vertex, Vertex> triangle = face.getTriangle();
        Vertex v0 = triangle.getValue0(), v1 = triangle.getValue1(), v2 = triangle.getValue2();
-       if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-           System.out.println("Problem face found "+ face.getId());
-       }
        for(FaceNode f: this.getFaces() ){
            if( !f.equals(face) && f.isFaceCongruent(face) ){
                processFaceToFindSubgraphTopVertex(f, triangle, candSubGraphTopVertices);
@@ -515,13 +512,14 @@ public class ModelGraph extends Graph {
        }
         List<Vertex> topVertices = getSubgraphTopVertex(triangle, candSubGraphTopVertices, face);
         List<Quartet<Vertex, Vertex, Vertex, Vertex>> subGraphVertices = new LinkedList<>();
-        if(face.getId().equals("F_2,000000000_0,541666666_1,583333333")){
-            System.out.println("Problem face found "+ face.getId() + ", topVertices = "+ topVertices.toString() + ", candSubGraphTopVertices = "+ candSubGraphTopVertices.toString());
-        }
 
        if(topVertices.size() > 0){
            for(Vertex topVertex: topVertices){
                subGraphVertices.add(new Quartet<>(v0, v1, v2, topVertex));
+           }
+           if((face.getIsBoundaryFace() && topVertices.size() != 1) || (!face.getIsBoundaryFace() && topVertices.size() != 2)){
+               facesForExtraRefinement.add(face);
+               System.out.println("REFINE FACE = "+face.getId() + ", USAGES = "+ topVertices.size() + ", IS_BORDER = "+face.getIsBoundaryFace());
            }
 
        }
@@ -556,6 +554,37 @@ public class ModelGraph extends Graph {
             }
         }
         return topVertices;
+    }
+
+    public ModelGraph performExtraRefinements(){
+        boolean oneRefinementDone = false;
+        for(FaceNode face: facesForExtraRefinement){
+            Optional<FaceNode> congruentNearestFaceOpt = getNearestCongruentFace(face, facesForExtraRefinement);
+            if(congruentNearestFaceOpt.isPresent()){
+                FaceNode congruentNearestFace = congruentNearestFaceOpt.get();
+                Optional<Pair<Vertex, Vertex>> uncommonVerticesOpt = face.getUncommonVerticesIfCongruent(congruentNearestFace);
+                Optional<Pair<Vertex, Vertex>> commonVerticesOpt = face.getVerticesFromCongruentEdge(congruentNearestFace);
+                Vertex unCommV0 = uncommonVerticesOpt.get().getValue0();
+                Vertex unCommV1 = uncommonVerticesOpt.get().getValue1();
+
+                Vertex commV0 = commonVerticesOpt.get().getValue0();
+                Vertex commV1 = commonVerticesOpt.get().getValue1();
+
+                if(!Utils.isEdgeBetween(unCommV0, unCommV1)){
+                    insertEdgeAutoNamed(unCommV0, unCommV1, false);
+                    FaceNode f1 = insertFaceAutoNamed(unCommV0, unCommV1, commV0);
+                    FaceNode f2 = insertFaceAutoNamed(unCommV0, unCommV1, commV1);
+                    System.out.println("CONGRUENT FACES F1 = "+ f1.getId() + ", F2 = "+f2.getId());
+                    oneRefinementDone = true;
+                }
+            }
+            if(oneRefinementDone) break;
+        }
+        return this;
+    }
+
+    public void clearExtraRefinementFaces(){
+        facesForExtraRefinement.clear();
     }
 
 }

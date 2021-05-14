@@ -19,7 +19,7 @@ public class Main {
         BreakingStats stats = new BreakingStats(false, true);
         TransformatorForLayers transformator = new TransformatorForLayers(cuboid, stats);
         cuboid = transformator.transform();
-        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "vi08_05_1");
+        MatlabVisualizer matlabVisualizer = new MatlabVisualizer(cuboid, "vi14_05_C");
         matlabVisualizer.saveCode();
         
         System.out.println("Program ended successfully");
