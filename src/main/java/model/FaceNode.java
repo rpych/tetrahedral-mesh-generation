@@ -133,22 +133,22 @@ public class FaceNode extends GraphNode {
     public Optional<Pair<Vertex, Vertex>> getUncommonVerticesIfCongruent(FaceNode face){
         if(this.isFaceCongruent(face)){
             Vertex[] vertices = getVerticesFromMap(face);
-            if(containsVertices(vertices[0], vertices[1])){
+            if(containsVertices(vertices[0], vertices[1]) && face.containsVertices(vertices[0], vertices[1])){
                 return Optional.of(new Pair<>(vertices[2], vertices[3]));
             }
-            else if(containsVertices(vertices[0], vertices[2])){
+            else if(containsVertices(vertices[0], vertices[2]) && face.containsVertices(vertices[0], vertices[2])){
                 return Optional.of(new Pair<>(vertices[1], vertices[3]));
             }
-            else if(containsVertices(vertices[0], vertices[3])){
+            else if(containsVertices(vertices[0], vertices[3]) && face.containsVertices(vertices[0], vertices[3])){
                 return Optional.of(new Pair<>(vertices[1], vertices[2]));
             }
-            else if(containsVertices(vertices[1], vertices[2])){
+            else if(containsVertices(vertices[1], vertices[2]) && face.containsVertices(vertices[1], vertices[2])){
                 return Optional.of(new Pair<>(vertices[0], vertices[3]));
             }
-            else if(containsVertices(vertices[1], vertices[3])){
+            else if(containsVertices(vertices[1], vertices[3]) && face.containsVertices(vertices[1], vertices[3])){
                 return Optional.of(new Pair<>(vertices[0], vertices[2]));
             }
-            else if(containsVertices(vertices[2], vertices[3])){
+            else if(containsVertices(vertices[2], vertices[3]) && face.containsVertices(vertices[2], vertices[3])){
                 return Optional.of(new Pair<>(vertices[0], vertices[1]));
             }
         }
